@@ -42,6 +42,14 @@ const userSchema = new Schema( {
     default: null,
     unique: true
   },
+  state: {
+    type: String,
+    default: null,
+  },
+  country: {
+    type: String,
+    default: 'Nigeria',
+  },
   password: {
     type: String,
     required: true,

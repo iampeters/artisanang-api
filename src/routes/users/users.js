@@ -199,8 +199,7 @@ router.get( '/all', Authenticator, async ( req, res ) => {
   };
 
   const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) :
-    {};
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
     const users = await Users.find( whereCondition )
@@ -277,8 +276,7 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
   };
 
   const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) :
-    {};
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
     const users = await Users.find( whereCondition )
@@ -386,6 +384,10 @@ router.get( '/:userId', Authenticator, async ( req, res ) => {
  *               type: string
  *             address:
  *               type: string
+ *             state:
+ *               type: string
+ *             country:
+ *               type: string
  *             password:
  *               type: string
  *             confirmPassword:
@@ -400,6 +402,8 @@ router.get( '/:userId', Authenticator, async ( req, res ) => {
  *           - address
  *           - password
  *           - confirmPassword
+ *           - state
+ *           - Country
  */
 
 router.post( '/create', async ( req, res ) => {
@@ -523,6 +527,10 @@ router.post( '/create', async ( req, res ) => {
  *               type: string
  *             imageUrl:
  *               type: string
+ *             state:
+ *               type: string
+ *             country:
+ *               type: string
  */
 
 router.put( '/update/:userId', Authenticator, async ( req, res ) => {
@@ -532,10 +540,16 @@ router.put( '/update/:userId', Authenticator, async ( req, res ) => {
     } = req.params;
     const {
       firstname,
-      lastname
+      lastname,
+      email,
+      phoneNumber,
+      address,
+      imageUrl,
+      state,
+      country
     } = req.body;
 
-    if ( !firstname || !lastname || !userId )
+    if ( !firstname || !lastname || !userId || !email || !phoneNumber || !address || !imageUrl || !state || !country )
       return res.status( BAD_REQUEST ).send( paramMissingError );
 
     const user = await Users.findOneAndUpdate( {
@@ -544,6 +558,14 @@ router.put( '/update/:userId', Authenticator, async ( req, res ) => {
       $set: {
         firstname,
         lastname,
+        firstname,
+        lastname,
+        email,
+        phoneNumber,
+        address,
+        imageUrl,
+        state,
+        country
       },
     }, {
       new: true,

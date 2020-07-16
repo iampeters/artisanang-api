@@ -208,14 +208,14 @@ router.post( '/create', async ( req, res ) => {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
-    let review = await Reviews.findOne( {
-      userId
+    let job = await Jobs.findOne( {
+      title
     } );
-    if ( review ) {
+    if ( job ) {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    review = new Artisans( {
+    job = new Jobs( {
       title,
       description,
       userId,
@@ -223,9 +223,9 @@ router.post( '/create', async ( req, res ) => {
       duration,
     } );
 
-    await review.save();
+    await job.save();
 
-    singleResponse.result = review
+    singleResponse.result = job
 
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
@@ -325,7 +325,7 @@ router.put( '/update/:jobId', Authenticator, async ( req, res ) => {
     if ( !title || !description || !duration || !artisanId )
       return res.status( BAD_REQUEST ).send( paramMissingError );
 
-    const review = await Reviews.findOneAndUpdate( {
+    const job = await Jobs.findOneAndUpdate( {
       _id: jobId
     }, {
       $set: {
@@ -339,13 +339,13 @@ router.put( '/update/:jobId', Authenticator, async ( req, res ) => {
       },
     }, {
       new: true,
-    } );
+    } ).populate('artisanId', 'firstname lastname email phone');
 
-    if ( !review ) {
+    if ( !job ) {
       return res.status( BAD_REQUEST ).send( failedRequest );
     }
 
-    singleResponse.result = review;
+    singleResponse.result = job;
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );

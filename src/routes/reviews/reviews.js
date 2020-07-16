@@ -15,8 +15,6 @@ const {
   failedRequest,
 } = require( '../../shared/constants' );
 
-const Artisans = require( '../../database/models/artisans' );
-const Users = require( '../../database/models/users' );
 const Reviews = require( '../../database/models/reviews' );
 const Authenticator = require( '../../middlewares/auth' );
 const Admin = require( '../../middlewares/isAdmin' );
@@ -217,7 +215,7 @@ router.post( '/create', async ( req, res ) => {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    review = new Artisans( {
+    review = new Reviews( {
       title,
       description,
       userId,
@@ -344,7 +342,7 @@ router.put( '/update/:reviewId', Authenticator, async ( req, res ) => {
       },
     }, {
       new: true,
-    } );
+    } ).populate('artisanId', 'firstname lastname email phone');
 
     if ( !review ) {
       return res.status( BAD_REQUEST ).send( failedRequest );
@@ -379,7 +377,7 @@ router.delete( '/delete/:reviewId', Authenticator, async ( req, res ) => {
     const {
       reviewId
     } = req.params;
-    const review = await Artisans.findOneAndDelete( {
+    const review = await Reviews.findOneAndDelete( {
       _id: reviewId
     } );
 

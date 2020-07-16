@@ -199,7 +199,7 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
  *     tags:
  *       - Artisans
  *     name: Create
- *     summary: Create a artisan
+ *     summary: Create an artisan
  *     consumes:
  *       - application/json
  *     parameters:
