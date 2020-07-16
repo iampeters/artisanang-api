@@ -41,7 +41,6 @@
     ]
   },
   "apis": [
-    "./src/routes/**/*.js",
-    "./src/swagger/models/*.js"
+    "./src/routes/**/*.js"
   ]
 }

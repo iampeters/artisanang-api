@@ -3,7 +3,6 @@ const express = require( 'express' );
 const {
   BAD_REQUEST,
   OK,
-  LOCKED
 } = require( 'http-status-codes' );
 
 const logger = require( '../../shared/Logger' );
@@ -13,154 +12,22 @@ const {
   duplicateEntry,
   paginatedResponse,
   noResult,
-  invalidCredentials,
-  userToken,
   failedRequest,
-  accountLocked,
 } = require( '../../shared/constants' );
-const encrypt = require( '../../security/encrypt' );
-const decrypt = require( '../../security/decrypt' );
 
-const Users = require( '../../database/models/users' );
+const Artisans = require( '../../database/models/artisans' );
 const Authenticator = require( '../../middlewares/auth' );
-
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_TIME = 0.5 * 60 * 60 * 1000;
 
 //  start
 const router = express.Router();
 
 /**
  * @swagger
- * /api/users/token:
- *   post:
- *     tags:
- *       - Token
- *     name: Token
- *     summary: Get token
- *     consumes:
- *       - application/json
- *     parameters:
- *       - name: body
- *         in: body
- *         schema:
- *           type: object
- *           properties:
- *             email:
- *               type: string
- *               format: email
- *             password:
- *               type: string
- *               format: password
- *         required:
- *           - email
- *           - password
- *     responses:
- *       200:
- *         description: User found and logged in successfully
- *       401:
- *         description: Bad username, not found in db
- *       403:
- *         description: Username and password don't match
- */
-
-router.post( '/token', async ( req, res ) => {
-  const {
-    email,
-    password
-  } = req.body;
-  try {
-    const user = await Users.findOne( {
-      email
-    } );
-    if ( !user ) return res.status( BAD_REQUEST ).json( invalidCredentials );
-
-    const isPasswordValid = await decrypt( password, user.password );
-    if ( !isPasswordValid ) {
-      if ( user.loginAttempts >= MAX_LOGIN_ATTEMPTS ) {
-        await Users.findOneAndUpdate( {
-          email
-        }, {
-          $set: {
-            lockUntil: Date.now() + LOCK_TIME,
-            isLocked: true,
-            loginAttempts: user.loginAttempts + 1,
-          },
-        } );
-
-        // TODO
-        // send account lock email here
-
-        return res.status( LOCKED ).json( accountLocked );
-      }
-
-      await Users.findOneAndUpdate( {
-        email
-      }, {
-        $set: {
-          loginAttempts: user.loginAttempts + 1,
-        },
-      } );
-
-      return res.status( BAD_REQUEST ).json( invalidCredentials );
-    }
-
-    if ( user.isLocked ) {
-      if ( user.lockUntil > Date.now() ) {
-        return res.status( LOCKED ).json( accountLocked );
-      } else {
-        await Users.findOneAndUpdate( {
-          email
-        }, {
-          $set: {
-            loginAttempts: 0,
-            lockUntil: null,
-            isLocked: false,
-          },
-        } );
-      }
-    }
-
-    if ( user.loginAttempts !== 0 ) {
-      await Users.findOneAndUpdate( {
-        email
-      }, {
-        $set: {
-          loginAttempts: 0,
-          lockUntil: null,
-          isLocked: false,
-        },
-      } );
-    }
-
-    const token = await user.generateAuthToken();
-    if ( !token ) return res.status( BAD_REQUEST ).json( invalidCredentials );
-
-    userToken.token = token.token;
-    userToken.refresh_token = token.refresh_token;
-    userToken.result = {
-      firstname: user.firstname,
-      lastname: user.lastname,
-      username: user.username,
-      id: user._id,
-    };
-
-    return res.status( OK ).json( userToken );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
-      error: err.message,
-    } );
-  }
-} );
-
-/**
- * @swagger
- * /api/users/all:
+ * /api/artisans/all:
  *  get:
- *   summary: Get all users
+ *   summary: Get all artisans
  *   tags:
- *     - Users
+ *     - Artisans
  *   produces:
  *    - application/json
  *   parameters:
@@ -180,16 +47,6 @@ router.post( '/token', async ( req, res ) => {
  *           - page
  *           - pageSize
  *           - whereCondition
- *   description: Get All Users - "GET /api/users/all
- *   responses:
- *    200:
- *      description: Successful
- *      content:
- *       application/json:
- *         schema:
- *          type: object
- *          items:
- *           $ref: '#/components/schemas/User'
  */
 
 router.get( '/all', Authenticator, async ( req, res ) => {
@@ -199,21 +56,20 @@ router.get( '/all', Authenticator, async ( req, res ) => {
   };
 
   const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) :
-    {};
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const users = await Users.find( whereCondition )
+    const users = await Artisans.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .select( {
         __v: 0,
         password: 0
-      } )
+      } ).populate('userId', 'firstname lastname _id')
       .sort( {
         _id: -1
       } );
-    const total = await Users.countDocuments( whereCondition );
+    const total = await Artisans.countDocuments( whereCondition );
 
     const data = {
       items: users,
@@ -234,11 +90,11 @@ router.get( '/all', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/users/admin/all:
+ * /api/artisans/admin/all:
  *  get:
- *   summary: Get all users by admin
+ *   summary: Get all artisans by admin
  *   tags:
- *     - Users
+ *     - Artisans
  *   produces:
  *    - application/json
  *   parameters:
@@ -258,16 +114,6 @@ router.get( '/all', Authenticator, async ( req, res ) => {
  *           - page
  *           - pageSize
  *           - whereCondition
- *   description: Get All Users - "GET /api/users/all
- *   responses:
- *    200:
- *      description: Successful
- *      content:
- *       application/json:
- *         schema:
- *          type: object
- *          items:
- *           $ref: '#/components/schemas/User'
  */
 
 router.get( '/admin/all', Authenticator, async ( req, res ) => {
@@ -277,21 +123,20 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
   };
 
   const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) :
-    {};
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const users = await Users.find( whereCondition )
+    const users = await Artisans.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .select( {
         __v: 0,
         password: 0
-      } )
+      } ).populate('userId', 'firstname lastname _id')
       .sort( {
         _id: -1
       } );
-    const total = await Users.countDocuments( whereCondition );
+    const total = await Artisans.countDocuments( whereCondition );
 
     const data = {
       items: users,
@@ -312,37 +157,25 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/users/{userId}:
+ * /api/artisans/{artisanId}:
  *  get:
- *   summary: Get user details
+ *   summary: Get artisans details
  *   tags:
- *     - Users
+ *     - Artisans
  *   parameters:
  *    - in: path
- *      name: userId
+ *      name: artisanId
  *      schema:
  *       type: string
  *      required: true
- *   produces:
- *    - application/json
- *   description: Get user by email - "GET /api/users/{email}
- *   responses:
- *    200:
- *      description: Successful
- *      content:
- *       application/json:
- *         schema:
- *          type: array
- *          items:
- *           $ref: '#/components/schemas/Users'
  */
 
-router.get( '/:userId', Authenticator, async ( req, res ) => {
+router.get( '/:artisanId', Authenticator, async ( req, res ) => {
   const {
     id
   } = req.params;
   try {
-    const user = await Users.findOne( {
+    const user = await Artisans.findOne( {
       _id: id
     } );
     if ( user ) {
@@ -361,12 +194,12 @@ router.get( '/:userId', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/users/create:
+ * /api/artisans/create:
  *   post:
  *     tags:
- *       - Users
+ *       - Artisans
  *     name: Create
- *     summary: Create a user
+ *     summary: Create a artisan
  *     consumes:
  *       - application/json
  *     parameters:
@@ -386,11 +219,19 @@ router.get( '/:userId', Authenticator, async ( req, res ) => {
  *               type: string
  *             address:
  *               type: string
- *             password:
- *               type: string
- *             confirmPassword:
+ *             specialization:
  *               type: string
  *             imageUrl:
+ *               type: string
+ *             nickname:
+ *               type: string
+ *             userId:
+ *               type: string
+ *             businessName:
+ *               type: string
+ *             RCNumber:
+ *               type: string
+ *             NIN:
  *               type: string
  *         required:
  *           - firstname
@@ -398,8 +239,9 @@ router.get( '/:userId', Authenticator, async ( req, res ) => {
  *           - email
  *           - phoneNumber
  *           - address
- *           - password
- *           - confirmPassword
+ *           - specialization
+ *           - nickname
+ *           - userId
  */
 
 router.post( '/create', async ( req, res ) => {
@@ -408,67 +250,80 @@ router.post( '/create', async ( req, res ) => {
       firstname,
       lastname,
       email,
-      password,
       phoneNumber,
-      confirmPassword,
       imageUrl,
       address,
+      specialization,
+      nickname,
+      userId,
+      businessName,
+      RCNumber,
+      NIN
     } = req.body;
 
     firstname.trim();
     lastname.trim();
     address.trim();
     phoneNumber.trim();
+    specialization.trim();
+    nickname && nickname.trim();
+    businessName && businessName.trim();
+    RCNumber && RCNumber.trim();
+    NIN && NIN.trim();
     req.body.email.toLowerCase();
 
     if (
       !firstname ||
       !lastname ||
       !email ||
-      !password ||
       !phoneNumber ||
-      !confirmPassword
+      !address ||
+      !specialization ||
+      !imageUrl ||
+      !userId
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
-    if ( password !== confirmPassword ) {
-      return res.status( BAD_REQUEST ).json( passwordMatch );
-    }
-
-    let user = await Users.findOne( {
+    let user = await Artisans.findOne( {
       email
     } );
     if ( user ) {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    const phone = await Users.findOne( {
+    const phone = await Artisans.findOne( {
       phoneNumber
     } );
     if ( phone ) {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    const hash = await encrypt( password );
-    req.body.password = hash;
+    const Address = await Artisans.findOne( {
+      address
+    } );
+    if ( Address ) {
+      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    }
 
-    user = new Users( {
+    user = new Artisans( {
       firstname,
       lastname,
       address,
       phoneNumber,
       email,
       imageUrl,
-      password: req.body.password,
+      nickname,
+      specialization,
+      userId,
+      businessName,
+      RCNumber,
+      NIN
     } );
-
-    const token = await user.generateAuthToken();
-    if ( !token ) return res.status( BAD_REQUEST ).json( failedRequest );
 
     await user.save();
 
-    userToken.result = {
+    singleResponse.result = {
       firstname: user.firstname,
       lastname: user.lastname,
       _id: user._id,
@@ -476,12 +331,15 @@ router.post( '/create', async ( req, res ) => {
       phoneNumber: user.phoneNumber,
       address: user.address,
       imageUrl: user.imageUrl,
+      specialization: user.specialization,
+      nickname: user.nickname,
+      userId: user.userId,
+      businessName: user.userId,
+      RCNumber: user.userId,
+      NIN: user.userId,
     };
-    userToken.token = token.token;
-    userToken.refresh_token = token.refresh_token;
-    delete userToken.result.password;
 
-    return res.status( OK ).send( userToken );
+    return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );
     return res.status( BAD_REQUEST ).json( {
@@ -492,12 +350,49 @@ router.post( '/create', async ( req, res ) => {
 
 /**
  * @swagger
- * /api/users/update/{userId}:
+ * /api/artisans/{artisanId}:
+ *  get:
+ *   summary: Get artisans details
+ *   tags:
+ *     - Artisans
+ *   parameters:
+ *    - in: path
+ *      name: artisanId
+ *      schema:
+ *       type: string
+ *      required: true
+ */
+
+router.get( '/:artisanId', Authenticator, async ( req, res ) => {
+  const {
+    id
+  } = req.params;
+  try {
+    const user = await Artisans.findOne( {
+      _id: id
+    } );
+    if ( user ) {
+      singleResponse.result = user;
+      return res.status( OK ).send( singleResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( noResult );
+    }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+/**
+ * @swagger
+ * /api/artisans/update/{artisanId}:
  *   put:
  *     tags:
- *       - Users
- *     name: Create
- *     summary: Create a user
+ *       - Artisans
+ *     name: Update
+ *     summary: Update a artisan
  *     consumes:
  *       - application/json
  *     parameters:
@@ -517,39 +412,57 @@ router.post( '/create', async ( req, res ) => {
  *               type: string
  *             address:
  *               type: string
- *             password:
- *               type: string
- *             confirmPassword:
+ *             specialization:
  *               type: string
  *             imageUrl:
  *               type: string
+ *             nickname:
+ *               type: string
  */
 
-router.put( '/update/:userId', Authenticator, async ( req, res ) => {
+router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
   try {
     const {
-      userId
+      artisanId
     } = req.params;
     const {
       firstname,
-      lastname
+      lastname,
+      email,
+      phoneNumber,
+      imageUrl,
+      address,
+      specialization,
+      nickname,
+      userId,
+      businessName,
+      RCNumber,
+      NIN
     } = req.body;
 
-    if ( !firstname || !lastname || !userId )
+    if ( !firstname || !lastname || !artisanId || !email || !phoneNumber || !address || !specialization )
       return res.status( BAD_REQUEST ).send( paramMissingError );
 
-    const user = await Users.findOneAndUpdate( {
+    const user = await Artisans.findOneAndUpdate( {
       _id: userId
     }, {
       $set: {
         firstname,
         lastname,
+        email,
+        phoneNumber,
+        imageUrl,
+        address,
+        specialization,
+        nickname,
+        updatedOn: new Date.now(),
+        updatedBy: userId,
+        businessName,
+        NIN,
+        RCNumber
       },
     }, {
       new: true,
-    } ).select( {
-      password: 0,
-      __v: 0,
     } );
 
     if ( !user ) {
@@ -568,25 +481,25 @@ router.put( '/update/:userId', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/users/delete/{userId}:
+ * /api/artisans/delete/{artisanId}:
  *  delete:
  *   tags:
- *     - Users
+ *     - Artisans
  *   parameters:
  *    - in: path
- *      name: userId
+ *      name: artisanId
  *      schema:
  *       type: number
  *      required: true
  */
 
-router.delete( '/delete/:userId', Authenticator, async ( req, res ) => {
+router.delete( '/delete/:artisanId', Authenticator, async ( req, res ) => {
   try {
     const {
-      id
+      artisanId
     } = req.params;
-    const user = await Users.findOneAndDelete( {
-      _id: id
+    const user = await Artisans.findOneAndDelete( {
+      _id: artisanId
     } );
 
     if ( user ) {

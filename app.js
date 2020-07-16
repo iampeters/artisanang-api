@@ -14,7 +14,7 @@ const swaggerJsDoc = require('swagger-jsdoc');
 const options = require('./src/swagger/swagger.json');
 const swaggerDocs = swaggerJsDoc(options);
 /* database */
-require('./src/database');
+// require('./src/database');
 require('./src/utils/envErrorHandler')
 require('./src/utils/exceptionHandler')
 require('./src/utils/rejectionHandler')
