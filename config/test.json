@@ -1,0 +1,6 @@
+{
+    "app-name": "Equipment Share API",
+    "environment": "test",
+    "db": "mongodb+srv://admin:artisanang2020@artisanang.zpjmj.mongodb.net/test?retryWrites=true",
+		"level":"error"
+}

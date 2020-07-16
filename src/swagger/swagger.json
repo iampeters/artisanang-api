@@ -1,0 +1,47 @@
+{
+  "definition": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Artisana API",
+      "description": "Artisana API",
+      "version": "1.0.0",
+      "contact": {
+        "name": "Artisana",
+        "url": "www.artisana.com",
+        "email": "artisanang@gmail.com"
+      },
+      "explorer": true,
+      "host": [
+        "http://localhost:5000"
+      ]
+    },
+    "schemes": [
+      "http"
+    ],
+    "servers": [
+      {
+        "url": "http://localhost:5000",
+        "description": "Test Environment"
+      }
+    ],
+    "components": {
+      "content": "application / json",
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    },
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ]
+  },
+  "apis": [
+    "./src/routes/**/*.js",
+    "./src/swagger/models/*.js"
+  ]
+}
