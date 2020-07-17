@@ -47,6 +47,13 @@ const noResult = {
   message: 'Record does not exist.',
 };
 
+const emailResponse = {
+  hasErrors: true,
+  hasResults: false,
+  successful: false,
+  message: 'Email sent successfully.',
+};
+
 const invalidCredentials = {
   hasErrors: true,
   hasResults: false,
@@ -77,5 +84,6 @@ module.exports = {
   failedRequest,
   passwordMatch,
   singleResponse,
-  accountLocked
+  accountLocked,
+  emailResponse
 };

@@ -1,16 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const UserRouter = require('./users/users');
-const ArtisansRouter = require('./artisans/artisans')
-const ReviewsRouter = require('./reviews/reviews')
-const JobsRouter = require('./jobs/jobs')
-const configRouter = require('./configuration/configuration')
+const UserRoute = require('./users/users');
+const ArtisansRoute = require('./artisans/artisans')
+const ReviewsRoute = require('./reviews/reviews')
+const JobsRoute = require('./jobs/jobs')
+const ConfigRoute = require('./configuration/configuration')
+const IdentityRoute = require('./identity/identity');
 
 /* GET home page. */
-router.use('/users', UserRouter);
-router.use('/artisans', ArtisansRouter);
-router.use('/reviews', ReviewsRouter);
-router.use('/jobs', JobsRouter);
-router.use('/configuration', configRouter);
+router.use('/users', UserRoute);
+router.use('/artisans', ArtisansRoute);
+router.use('/reviews', ReviewsRoute);
+router.use('/jobs', JobsRoute);
+router.use('/configuration', ConfigRoute);
+router.use('/identity', IdentityRoute);
 
 module.exports = router;
