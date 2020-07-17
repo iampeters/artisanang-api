@@ -6,7 +6,7 @@ const bcrypt = require( 'bcrypt' );
 const Schema = mongoose.Schema;
 const model = mongoose.model;
 
-const userSchema = new Schema( {
+const adminSchema = new Schema( {
   email: {
     type: String,
     required: true,
@@ -37,19 +37,6 @@ const userSchema = new Schema( {
     type: String,
     default: null,
   },
-  address: {
-    type: String,
-    default: null,
-    unique: true
-  },
-  state: {
-    type: String,
-    default: null,
-  },
-  country: {
-    type: String,
-    default: 'Nigeria',
-  },
   password: {
     type: String,
     required: true,
@@ -74,10 +61,6 @@ const userSchema = new Schema( {
     type: Boolean,
     default: true,
   },
-  allowChat: {
-    type: Boolean,
-    default: true,
-  },
   createdOn: {
     type: Date,
     default: Date.now
@@ -92,16 +75,17 @@ const userSchema = new Schema( {
   },
   isAdmin: {
     type: Boolean,
-    default: false
+    default: true
   }
 } );
 
-userSchema.methods.generateAuthToken = function () {
+adminSchema.methods.generateAuthToken = function () {
   const token = jwt.sign( {
       _id: this._id,
       email: this.email,
       firstname: this.firstname,
       lastname: this.lastname,
+      isAdmin: this.isAdmin,
       type: 'access_token',
     },
     config.get( 'jwtPrivateKey' ), {
@@ -124,7 +108,7 @@ userSchema.methods.generateAuthToken = function () {
 };
 
 // encrypt password
-userSchema.methods.encrypt = () => {
+adminSchema.methods.encrypt = () => {
   const encrypt = async ( password ) => {
     if ( !password ) throw Error( 'Password is required.' );
     const salt = await bcrypt.genSalt( 10 );
@@ -136,7 +120,7 @@ userSchema.methods.encrypt = () => {
 };
 
 // decrypt password
-userSchema.methods.decrypt = () => {
+adminSchema.methods.decrypt = () => {
   const decrypt = async ( password, hash ) => {
     const result = await bcrypt.compare( password, hash );
     return result;
@@ -145,6 +129,6 @@ userSchema.methods.decrypt = () => {
   return decrypt;
 };
 
-const Users = model( 'Users', userSchema, 'users' );
+const Admins = model( 'Admins', adminSchema, 'admins' );
 
-module.exports = Users;
+module.exports = Admins;

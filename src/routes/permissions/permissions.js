@@ -15,7 +15,7 @@ const {
   failedRequest,
 } = require( '../../shared/constants' );
 
-const Reviews = require( '../../database/models/reviews' );
+const Permissions = require( '../../database/models/permissions' );
 const Authenticator = require( '../../middlewares/auth' );
 const Admin = require( '../../middlewares/isAdmin' );
 
@@ -24,11 +24,11 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/reviews/all:
+ * /api/permissions:
  *  get:
- *   summary: Get all reviews
+ *   summary: Get all permissions
  *   tags:
- *     - Reviews
+ *     - Permissions
  *   produces:
  *    - application/json
  *   parameters:
@@ -50,7 +50,7 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/all', Authenticator, async ( req, res ) => {
+router.get( '/', [Admin, Authenticator], async ( req, res ) => {
   const pagination = {
     page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
     pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
@@ -60,16 +60,16 @@ router.get( '/all', Authenticator, async ( req, res ) => {
     JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const reviews = await Reviews.find( whereCondition )
+    const permissions = await Permissions.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .sort( {
         _id: -1
       } );
-    const total = await Reviews.countDocuments( whereCondition );
+    const total = await Permissions.countDocuments( whereCondition );
 
     const data = {
-      items: reviews,
+      items: permissions,
       total,
     };
 
@@ -87,75 +87,11 @@ router.get( '/all', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/reviews/admin/all:
- *  get:
- *   summary: Get all reviews by admin
- *   tags:
- *     - Reviews
- *   produces:
- *    - application/json
- *   parameters:
- *       - name: page
- *         in: query
- *         schema:
- *           type: integer
- *       - name: pageSize
- *         in: query
- *         schema:
- *            type: integer
- *       - name: whereCondition
- *         in: query
- *         schema:
- *            type: object
- *         required:
- *           - page
- *           - pageSize
- *           - whereCondition
- */
-
-router.get( '/admin/all', [ Authenticator, Admin ], async ( req, res ) => {
-  const pagination = {
-    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
-    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
-  };
-
-  const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) : {};
-
-  try {
-    const reviews = await Reviews.find( whereCondition )
-      .skip( ( pagination.page - 1 ) * pagination.pageSize )
-      .limit( pagination.pageSize )
-      .sort( {
-        _id: -1
-      } );
-    const total = await Reviews.countDocuments( whereCondition );
-
-    const data = {
-      items: reviews,
-      total,
-    };
-
-    // Paginated Response
-    paginatedResponse.result = data;
-
-    return res.status( OK ).send( paginatedResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
-      error: err.message,
-    } );
-  }
-} );
-
-/**
- * @swagger
- * /api/reviews/create:
+ * /api/permissions/create:
  *   post:
  *     tags:
- *       - Reviews
+ *       - Permissions
  *     name: Create
- *     summary: Create a review
  *     consumes:
  *       - application/json
  *     parameters:
@@ -164,68 +100,72 @@ router.get( '/admin/all', [ Authenticator, Admin ], async ( req, res ) => {
  *         schema:
  *           type: object
  *           properties:
- *             title:
+ *             name:
  *               type: string
- *             description:
- *               type: string
- *             rating:
- *               type: number
- *             artisanId:
- *               type: string
- *             userId:
- *               type: string
+ *             canRead:
+ *               type: boolean
+ *             canWrite:
+ *               type: boolean
+ *             canUpdate:
+ *               type: boolean
+ *             canDelete:
+ *               type: boolean
  *             createdOn:
  *               type: string
+ *             createdBy:
+ *               type: string
  *         required:
- *           - title
- *           - description
- *           - rating
- *           - artisanId
- *           - userId
+ *           - name
+ *           - canRead
+ *           - canWrite
+ *           - canUpdate
+ *           - canDelete
  *           - createdOn
+ *           - createdBy
  */
 
-router.post( '/create', Authenticator, async ( req, res ) => {
+router.post( '/create', [Admin, Authenticator], async ( req, res ) => {
   try {
     const {
-      title,
-      description,
-      userId,
-      artisanId,
-      rating,
+      name,
+      canRead,
+      canWrite,
+      canUpdate,
+      canDelete,
     } = req.body;
 
-    title.trim();
-    description.trim();
+    name.trim();
+    canRead.trim();
 
     if (
-      !title ||
-      !description ||
-      !userId ||
-      !artisanId ||
-      !rating
+      !name ||
+      !canRead ||
+      !canWrite ||
+      !canUpdate ||
+      !canDelete
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
-    let review = await Reviews.findOne( {
-      userId
+    let permission = await Permissions.findOne( {
+      name
     } );
-    if ( review ) {
+    if ( permission ) {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    review = new Reviews( {
-      title,
-      description,
-      userId,
-      artisanId,
-      rating,
+    permission = new Permissions( {
+      name,
+      canRead,
+      canWrite,
+      canUpdate,
+      canDelete,
+      createdBy: req.user._id
     } );
 
-    await review.save();
+    await permission.save();
 
-    singleResponse.result = review
+    singleResponse.result = permission
 
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
@@ -238,29 +178,28 @@ router.post( '/create', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/reviews/{reviewId}:
+ * /api/permissions/{permissionId}:
  *  get:
- *   summary: Get review details
  *   tags:
- *     - Reviews
+ *     - Permissions
  *   parameters:
  *    - in: path
- *      name: reviewId
+ *      name: permissionId
  *      schema:
  *       type: string
  *      required: true
  */
 
-router.get( '/:reviewId', Authenticator, async ( req, res ) => {
+router.get( '/:permissionId', [Admin, Authenticator], async ( req, res ) => {
   const {
-    reviewId
+    permissionId
   } = req.params;
   try {
-    const review = await Reviews.findOne( {
-      _id: reviewId
+    const permission = await Permissions.findOne( {
+      _id: permissionId
     } );
-    if ( review ) {
-      singleResponse.result = review;
+    if ( permission ) {
+      singleResponse.result = permission;
       return res.status( OK ).send( singleResponse );
     } else {
       return res.status( BAD_REQUEST ).send( noResult );
@@ -273,15 +212,13 @@ router.get( '/:reviewId', Authenticator, async ( req, res ) => {
   }
 } );
 
-
 /**
  * @swagger
- * /api/reviews/update:
+ * /api/permissions/update/{permissionId}:
  *   put:
  *     tags:
- *       - Reviews
+ *       - Permissions
  *     name: Update
- *     summary: Update a review
  *     consumes:
  *       - application/json
  *     parameters:
@@ -290,65 +227,64 @@ router.get( '/:reviewId', Authenticator, async ( req, res ) => {
  *         schema:
  *           type: object
  *           properties:
- *             title:
+ *             name:
  *               type: string
- *             description:
- *               type: string
- *             rating:
- *               type: number
- *             artisanId:
- *               type: string
- *             userId:
- *               type: string
+ *             canRead:
+ *               type: boolean
+ *             canWrite:
+ *               type: boolean
+ *             canUpdate:
+ *               type: boolean
+ *             canDelete:
+ *               type: boolean
  *             updatedOn:
  *               type: string
- *             updatedBy:
- *               type: string
  *         required:
- *           - title
- *           - description
- *           - rating
- *           - artisanId
- *           - userId
+ *           - name
+ *           - canRead
+ *           - canWrite
+ *           - canUpdate
+ *           - canDelete
+ *           - updatedOn
  */
 
-router.put( '/update/:reviewId', Authenticator, async ( req, res ) => {
+router.put( '/update/:permissionId', [Admin,Authenticator], async ( req, res ) => {
   try {
     const {
-      reviewId
+      permissionId
     } = req.params;
     const {
-      title,
-      description,
-      userId,
-      artisanId,
-      rating,
+      name,
+      canRead,
+      canWrite,
+      canUpdate,
+      canDelete,
     } = req.body;
 
-    if ( !title || !description || !artisanId || !userId || !rating )
+    if ( !name || !canRead || !canDelete || !canUpdate || !canWrite )
       return res.status( BAD_REQUEST ).send( paramMissingError );
 
-    const review = await Reviews.findOneAndUpdate( {
-      _id: reviewId
+    const permission = await Permissions.findOneAndUpdate( {
+      _id: permissionId
     }, {
       $set: {
-        title,
-        description,
-        userId,
-        artisanId,
-        rating,
+        name,
+        canRead,
+        canWrite,
+        canUpdate,
+        canDelete,
         updatedOn: Date.now(),
-        updatedBy: userId
+        updatedBy: req.user._id
       },
     }, {
       new: true,
-    } ).populate('artisanId', 'firstname lastname email phone');
+    } );
 
-    if ( !review ) {
+    if ( !permission ) {
       return res.status( BAD_REQUEST ).send( failedRequest );
     }
 
-    singleResponse.result = review;
+    singleResponse.result = permission;
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );
@@ -360,29 +296,29 @@ router.put( '/update/:reviewId', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/reviews/delete/{reviewId}:
+ * /api/permissions/delete/{permissionId}:
  *  delete:
  *   tags:
- *     - Reviews
+ *     - Permissions
  *   parameters:
  *    - in: path
- *      name: reviewId
+ *      name: permissionId
  *      schema:
  *       type: number
  *      required: true
  */
 
-router.delete( '/delete/:reviewId', Authenticator, async ( req, res ) => {
+router.delete( '/delete/:permissionId', [Admin, Authenticator], async ( req, res ) => {
   try {
     const {
-      reviewId
+      permissionId
     } = req.params;
-    const review = await Reviews.findOneAndDelete( {
-      _id: reviewId
+    const permission = await Permissions.findOneAndDelete( {
+      _id: permissionId
     } );
 
-    if ( review ) {
-      singleResponse.result = review;
+    if ( permission ) {
+      singleResponse.result = permission;
       return res.status( OK ).send( singleResponse );
     } else {
       return res.status( BAD_REQUEST ).send( singleResponse );

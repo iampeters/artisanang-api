@@ -68,6 +68,13 @@ const accountLocked = {
   message: 'Maximum login attempts exceeded. Account temporarily locked.',
 };
 
+const accountBlocked = {
+  hasErrors: true,
+  hasResults: false,
+  successful: false,
+  message: 'Account temporarily suspended.',
+};
+
 const userToken = {
   token: '',
   refresh_token: '',
@@ -85,5 +92,6 @@ module.exports = {
   passwordMatch,
   singleResponse,
   accountLocked,
-  emailResponse
+  emailResponse,
+  accountBlocked
 };

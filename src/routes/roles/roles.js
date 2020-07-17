@@ -15,7 +15,7 @@ const {
   failedRequest,
 } = require( '../../shared/constants' );
 
-const Reviews = require( '../../database/models/reviews' );
+const Roles = require( '../../database/models/roles' );
 const Authenticator = require( '../../middlewares/auth' );
 const Admin = require( '../../middlewares/isAdmin' );
 
@@ -24,11 +24,10 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/reviews/all:
+ * /api/roles:
  *  get:
- *   summary: Get all reviews
  *   tags:
- *     - Reviews
+ *     - Roles
  *   produces:
  *    - application/json
  *   parameters:
@@ -50,7 +49,7 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/all', Authenticator, async ( req, res ) => {
+router.get( '/', [ Admin, Authenticator ], async ( req, res ) => {
   const pagination = {
     page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
     pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
@@ -60,16 +59,16 @@ router.get( '/all', Authenticator, async ( req, res ) => {
     JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const reviews = await Reviews.find( whereCondition )
+    const roles = await Roles.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .sort( {
         _id: -1
       } );
-    const total = await Reviews.countDocuments( whereCondition );
+    const total = await Roles.countDocuments( whereCondition );
 
     const data = {
-      items: reviews,
+      items: roles,
       total,
     };
 
@@ -87,75 +86,11 @@ router.get( '/all', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/reviews/admin/all:
- *  get:
- *   summary: Get all reviews by admin
- *   tags:
- *     - Reviews
- *   produces:
- *    - application/json
- *   parameters:
- *       - name: page
- *         in: query
- *         schema:
- *           type: integer
- *       - name: pageSize
- *         in: query
- *         schema:
- *            type: integer
- *       - name: whereCondition
- *         in: query
- *         schema:
- *            type: object
- *         required:
- *           - page
- *           - pageSize
- *           - whereCondition
- */
-
-router.get( '/admin/all', [ Authenticator, Admin ], async ( req, res ) => {
-  const pagination = {
-    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
-    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
-  };
-
-  const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) : {};
-
-  try {
-    const reviews = await Reviews.find( whereCondition )
-      .skip( ( pagination.page - 1 ) * pagination.pageSize )
-      .limit( pagination.pageSize )
-      .sort( {
-        _id: -1
-      } );
-    const total = await Reviews.countDocuments( whereCondition );
-
-    const data = {
-      items: reviews,
-      total,
-    };
-
-    // Paginated Response
-    paginatedResponse.result = data;
-
-    return res.status( OK ).send( paginatedResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
-      error: err.message,
-    } );
-  }
-} );
-
-/**
- * @swagger
- * /api/reviews/create:
+ * /api/roles/create:
  *   post:
  *     tags:
- *       - Reviews
+ *       - Roles
  *     name: Create
- *     summary: Create a review
  *     consumes:
  *       - application/json
  *     parameters:
@@ -164,68 +99,54 @@ router.get( '/admin/all', [ Authenticator, Admin ], async ( req, res ) => {
  *         schema:
  *           type: object
  *           properties:
- *             title:
+ *             name:
  *               type: string
- *             description:
- *               type: string
- *             rating:
- *               type: number
- *             artisanId:
- *               type: string
- *             userId:
- *               type: string
+ *             permissions:
+ *               type: Array
  *             createdOn:
  *               type: string
+ *             createdBy:
+ *               type: string
  *         required:
- *           - title
- *           - description
- *           - rating
- *           - artisanId
- *           - userId
+ *           - name
+ *           - permissions
  *           - createdOn
+ *           - createdBy
  */
 
-router.post( '/create', Authenticator, async ( req, res ) => {
+router.post( '/create', [ Admin, Authenticator ], async ( req, res ) => {
   try {
     const {
-      title,
-      description,
-      userId,
-      artisanId,
-      rating,
+      name,
+      permissions,
     } = req.body;
 
-    title.trim();
-    description.trim();
+    name.trim();
 
     if (
-      !title ||
-      !description ||
-      !userId ||
-      !artisanId ||
-      !rating
+      !name ||
+      !permissions
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
-    let review = await Reviews.findOne( {
-      userId
+    let role = await Roles.findOne( {
+      name
     } );
-    if ( review ) {
+    if ( role ) {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    review = new Reviews( {
-      title,
-      description,
-      userId,
-      artisanId,
-      rating,
+    role = new Roles( {
+      name,
+      permissions,
+      createdOn: Date.now(),
+      createdBy: req.user._id
     } );
 
-    await review.save();
+    await role.save();
 
-    singleResponse.result = review
+    singleResponse.result = role
 
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
@@ -238,29 +159,28 @@ router.post( '/create', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/reviews/{reviewId}:
+ * /api/roles/{roleId}:
  *  get:
- *   summary: Get review details
  *   tags:
- *     - Reviews
+ *     - Roles
  *   parameters:
  *    - in: path
- *      name: reviewId
+ *      name: roleId
  *      schema:
  *       type: string
  *      required: true
  */
 
-router.get( '/:reviewId', Authenticator, async ( req, res ) => {
+router.get( '/:roleId', [ Admin, Authenticator ], async ( req, res ) => {
   const {
-    reviewId
+    roleId
   } = req.params;
   try {
-    const review = await Reviews.findOne( {
-      _id: reviewId
+    const role = await Roles.findOne( {
+      _id: roleId
     } );
-    if ( review ) {
-      singleResponse.result = review;
+    if ( role ) {
+      singleResponse.result = role;
       return res.status( OK ).send( singleResponse );
     } else {
       return res.status( BAD_REQUEST ).send( noResult );
@@ -273,15 +193,13 @@ router.get( '/:reviewId', Authenticator, async ( req, res ) => {
   }
 } );
 
-
 /**
  * @swagger
- * /api/reviews/update:
+ * /api/roles/update/{roleId}:
  *   put:
  *     tags:
- *       - Reviews
+ *       - Roles
  *     name: Update
- *     summary: Update a review
  *     consumes:
  *       - application/json
  *     parameters:
@@ -290,65 +208,52 @@ router.get( '/:reviewId', Authenticator, async ( req, res ) => {
  *         schema:
  *           type: object
  *           properties:
- *             title:
+ *             name:
  *               type: string
- *             description:
- *               type: string
- *             rating:
- *               type: number
- *             artisanId:
- *               type: string
- *             userId:
- *               type: string
+ *             permissions:
+ *               type: array
  *             updatedOn:
  *               type: string
  *             updatedBy:
  *               type: string
  *         required:
- *           - title
- *           - description
- *           - rating
- *           - artisanId
- *           - userId
+ *           - name
+ *           - permissions
+ *           - updatedOn
+ *           - updatedBy
  */
 
-router.put( '/update/:reviewId', Authenticator, async ( req, res ) => {
+router.put( '/update/:roleId', [ Admin, Authenticator ], async ( req, res ) => {
   try {
     const {
-      reviewId
+      roleId
     } = req.params;
     const {
-      title,
-      description,
-      userId,
-      artisanId,
-      rating,
+      name,
+      permissions,
     } = req.body;
 
-    if ( !title || !description || !artisanId || !userId || !rating )
+    if ( !name || !permissions )
       return res.status( BAD_REQUEST ).send( paramMissingError );
 
-    const review = await Reviews.findOneAndUpdate( {
-      _id: reviewId
+    const role = await Roles.findOneAndUpdate( {
+      _id: roleId
     }, {
       $set: {
-        title,
-        description,
-        userId,
-        artisanId,
-        rating,
+        name,
+        permissions,
         updatedOn: Date.now(),
-        updatedBy: userId
+        updatedBy: req.user._id
       },
     }, {
       new: true,
-    } ).populate('artisanId', 'firstname lastname email phone');
+    } );
 
-    if ( !review ) {
+    if ( !role ) {
       return res.status( BAD_REQUEST ).send( failedRequest );
     }
 
-    singleResponse.result = review;
+    singleResponse.result = role;
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );
@@ -360,29 +265,29 @@ router.put( '/update/:reviewId', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/reviews/delete/{reviewId}:
+ * /api/roles/delete/{roleId}:
  *  delete:
  *   tags:
- *     - Reviews
+ *     - Roles
  *   parameters:
  *    - in: path
- *      name: reviewId
+ *      name: roleId
  *      schema:
  *       type: number
  *      required: true
  */
 
-router.delete( '/delete/:reviewId', Authenticator, async ( req, res ) => {
+router.delete( '/delete/:roleId', [ Admin, Authenticator ], async ( req, res ) => {
   try {
     const {
-      reviewId
+      roleId
     } = req.params;
-    const review = await Reviews.findOneAndDelete( {
-      _id: reviewId
+    const role = await Roles.findOneAndDelete( {
+      _id: roleId
     } );
 
-    if ( review ) {
-      singleResponse.result = review;
+    if ( role ) {
+      singleResponse.result = role;
       return res.status( OK ).send( singleResponse );
     } else {
       return res.status( BAD_REQUEST ).send( singleResponse );
