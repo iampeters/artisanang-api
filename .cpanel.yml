@@ -1,6 +1,6 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/user/public_html
+    - export DEPLOYPATH=/home/artisan3/public_html
     - /bin/cp -R . $DEPLOYPATH/api
     - /bin/cp -R . $DEPLOYPATH/demo
