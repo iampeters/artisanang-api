@@ -305,16 +305,16 @@ router.post( '/admin/token', async ( req, res ) => {
 
 router.post( '/forgotPassword', async ( req, res ) => {
   const {
-    userId
+    email
   } = req.body;
 
   try {
     const user = await Users.findOne( {
-      _id: userId
+      _id: email
     } );
     if ( user ) {
       // send email
-      await Mailer( 'You just logged in', 'chikeziepeters@gmail.com', '🛡Password Reset Request', ( err ) => {
+      await Mailer( 'You just logged in', email, '🛡Password Reset Request', ( err ) => {
         logger.error( err.message, err );
       } )
 
