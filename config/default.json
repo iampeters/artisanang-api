@@ -1,6 +1,12 @@
 {
   "app-name": "Equipment Share API",
   "environment": "development",
-  "db": "mongodb+srv://admin:artisanang2020@artisanang.zpjmj.mongodb.net/test?retryWrites=true",
+  "jwtPrivateKey": "jwtPrivateKey",
+  "refreshTokenPrivateKey": "refreshTokenPrivateKey",
+  "emailUser": "emailUser",
+  "emailPassword": "emailPassword",
+  "db": "connectionString",
+  "host": "host",
+  "mailer": "mailer",
   "level": "error"
 }

@@ -1,6 +1,12 @@
 {
   "app-name": "Bankly Notification API",
   "environment": "production",
-  "db": "mongodb+srv://admin:artisanang2020@artisanang.zpjmj.mongodb.net/test?retryWrites=true",
+  "emailUser": "emailUser",
+  "emailPassword": "emailPassword",
+  "jwtPrivateKey": "jwtPrivateKey",
+  "refreshTokenPrivateKey": "refreshTokenPrivateKey",
+  "db": "connectionString",
+  "host": "host",
+  "mailer": "mailer",
   "level": "info"
 }
