@@ -7,7 +7,7 @@
       "version": "1.0.0",
       "contact": {
         "name": "Artisana",
-        "url": "https://www.artisana.com",
+        "url": "https://www.artisana.ng",
         "email": "app@artisana.ng"
       },
       "explorer": true,
@@ -16,7 +16,7 @@
       ]
     },
     "schemes": [
-      "http"
+      "https"
     ],
     "servers": [
       {
