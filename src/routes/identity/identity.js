@@ -141,7 +141,7 @@ router.post( '/token', async ( req, res ) => {
 
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
-    userToken.result = {
+    userToken.user = {
       firstname: user.firstname,
       lastname: user.lastname,
       username: user.username,
@@ -262,7 +262,7 @@ router.post( '/admin/token', async ( req, res ) => {
 
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
-    userToken.result = {
+    userToken.user = {
       firstname: user.firstname,
       lastname: user.lastname,
       username: user.username,

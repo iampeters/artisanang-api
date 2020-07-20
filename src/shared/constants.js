@@ -78,7 +78,7 @@ const accountBlocked = {
 const userToken = {
   token: '',
   refresh_token: '',
-  result: {},
+  user: {},
 };
 
 module.exports = {
