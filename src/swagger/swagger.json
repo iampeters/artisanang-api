@@ -7,12 +7,12 @@
       "version": "1.0.0",
       "contact": {
         "name": "Artisana",
-        "url": "www.artisana.com",
-        "email": "artisanang@gmail.com"
+        "url": "https://www.artisana.com",
+        "email": "app@artisana.ng"
       },
       "explorer": true,
       "host": [
-        "http://localhost:5000"
+        "https://api.artisana.ng"
       ]
     },
     "schemes": [
@@ -20,8 +20,8 @@
     ],
     "servers": [
       {
-        "url": "http://localhost:5000",
-        "description": "Test Environment"
+        "url": "https://api.artisana.ng",
+        "description": "Production Environment"
       }
     ],
     "components": {
