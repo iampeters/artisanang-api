@@ -79,6 +79,7 @@ const userToken = {
   token: '',
   refresh_token: '',
   user: {},
+  permissions: []
 };
 
 module.exports = {

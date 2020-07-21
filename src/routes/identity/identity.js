@@ -316,6 +316,8 @@ router.post('/admin/token', async (req, res) => {
       id: user._id,
     };
 
+    userToken.permissions = user.permissions,
+
     // send email to user
     await Mailer(
       'You just logged in',

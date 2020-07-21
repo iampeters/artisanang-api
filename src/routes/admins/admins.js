@@ -163,6 +163,8 @@ router.get( '/:adminId', [ AdminGuard, Authenticator ], async ( req, res ) => {
  *               type: string
  *             imageUrl:
  *               type: string
+ *             permissions:
+ *               type: Array
  *         required:
  *           - firstname
  *           - lastname
@@ -170,6 +172,7 @@ router.get( '/:adminId', [ AdminGuard, Authenticator ], async ( req, res ) => {
  *           - phoneNumber
  *           - password
  *           - confirmPassword
+ *           - permissions
  */
 
 router.post( '/create', [ Authenticator, AdminGuard ], async ( req, res ) => {

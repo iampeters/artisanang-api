@@ -25,6 +25,10 @@ const adminSchema = new Schema( {
     default: null,
     required: true,
   },
+  permissions: {
+    type: Array,
+    default: []
+  },
   phoneNumber: {
     type: String,
     maxlength: 11,
