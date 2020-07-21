@@ -20,6 +20,7 @@ const decrypt = require( '../../security/decrypt' );
 
 const Users = require( '../../database/models/users' );
 const Authenticator = require( '../../middlewares/auth' );
+const Mailer = require('../../engine/mailer');
 
 //  start
 const router = express.Router();
@@ -354,6 +355,7 @@ router.post( '/create', async ( req, res ) => {
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
     delete userToken.result.password;
+    delete userToken.permissions;
 
     // send onboarding email
     // send email to user
