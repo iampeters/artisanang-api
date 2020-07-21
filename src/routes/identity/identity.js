@@ -1,12 +1,8 @@
-require( 'module-alias/register' );
-const express = require( 'express' );
-const {
-  BAD_REQUEST,
-  OK,
-  LOCKED
-} = require( 'http-status-codes' );
+require('module-alias/register');
+const express = require('express');
+const { BAD_REQUEST, OK, LOCKED } = require('http-status-codes');
 
-const logger = require( '../../shared/Logger' );
+const logger = require('../../shared/Logger');
 const {
   noResult,
   invalidCredentials,
@@ -17,13 +13,13 @@ const {
   passwordMatch,
   paramMissingError,
   singleResponse,
-  failedRequest
-} = require( '../../shared/constants' );
-const decrypt = require( '../../security/decrypt' );
-const Mailer = require( '../../engine/mailer' );
+  failedRequest,
+} = require('../../shared/constants');
+const decrypt = require('../../security/decrypt');
+const Mailer = require('../../engine/mailer');
 
-const Users = require( '../../database/models/users' );
-const Admins = require( '../../database/models/admins' );
+const Users = require('../../database/models/users');
+const Admins = require('../../database/models/admins');
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_TIME = 0.5 * 60 * 60 * 1000;
@@ -65,79 +61,100 @@ const router = express.Router();
  *         description: Username and password don't match
  */
 
-router.post( '/token', async ( req, res ) => {
-  const {
-    email,
-    password
-  } = req.body;
+router.post('/token', async (req, res) => {
+  const { email, password } = req.body;
   try {
-    const user = await Users.findOne( {
-      email
-    } );
-    if ( !user ) return res.status( BAD_REQUEST ).json( invalidCredentials );
+    const user = await Users.findOne({
+      email,
+    });
+    if (!user) return res.status(BAD_REQUEST).json(invalidCredentials);
 
-    if ( !user.isActive ) return res.status( BAD_REQUEST ).json( accountBlocked );
+    if (!user.isActive) return res.status(BAD_REQUEST).json(accountBlocked);
 
-    const isPasswordValid = await decrypt( password, user.password );
-    if ( !isPasswordValid ) {
-      if ( user.loginAttempts >= MAX_LOGIN_ATTEMPTS ) {
-        await Users.findOneAndUpdate( {
-          email
-        }, {
-          $set: {
-            lockUntil: Date.now() + LOCK_TIME,
-            isLocked: true,
-            loginAttempts: user.loginAttempts + 1,
+    const isPasswordValid = await decrypt(password, user.password);
+    if (!isPasswordValid) {
+      if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+        await Users.findOneAndUpdate(
+          {
+            email,
           },
-        } );
+          {
+            $set: {
+              lockUntil: Date.now() + LOCK_TIME,
+              isLocked: true,
+              loginAttempts: user.loginAttempts + 1,
+            },
+          }
+        );
 
         // TODO
         // send account lock email here
 
-        return res.status( LOCKED ).json( accountLocked );
+        return res.status(LOCKED).json(accountLocked);
       }
 
-      await Users.findOneAndUpdate( {
-        email
-      }, {
-        $set: {
-          loginAttempts: user.loginAttempts + 1,
+      await Users.findOneAndUpdate(
+        {
+          email,
         },
-      } );
+        {
+          $set: {
+            loginAttempts: user.loginAttempts + 1,
+          },
+        }
+      );
 
-      return res.status( BAD_REQUEST ).json( invalidCredentials );
+      return res.status(BAD_REQUEST).json(invalidCredentials);
     }
 
-    if ( user.isLocked ) {
-      if ( user.lockUntil > Date.now() ) {
-        return res.status( LOCKED ).json( accountLocked );
+    if (user.isLocked) {
+      if (user.lockUntil > Date.now()) {
+        return res.status(LOCKED).json(accountLocked);
       } else {
-        await Users.findOneAndUpdate( {
-          email
-        }, {
+        await Users.findOneAndUpdate(
+          {
+            email,
+          },
+          {
+            $set: {
+              loginAttempts: 0,
+              lockUntil: null,
+              isLocked: false,
+            },
+          }
+        );
+      }
+    }
+
+    if (user.loginAttempts !== 0) {
+      await Users.findOneAndUpdate(
+        {
+          email,
+        },
+        {
           $set: {
             loginAttempts: 0,
             lockUntil: null,
             isLocked: false,
           },
-        } );
-      }
-    }
-
-    if ( user.loginAttempts !== 0 ) {
-      await Users.findOneAndUpdate( {
-        email
-      }, {
-        $set: {
-          loginAttempts: 0,
-          lockUntil: null,
-          isLocked: false,
-        },
-      } );
+        }
+      );
     }
 
     const token = await user.generateAuthToken();
-    if ( !token ) return res.status( BAD_REQUEST ).json( invalidCredentials );
+    if (!token) return res.status(BAD_REQUEST).json(invalidCredentials);
+
+    await Users.findOneAndUpdate(
+      {
+        email,
+      },
+      {
+        $set: {
+          lastLogin: user.loginTime,
+          loginTime: new Date.now(),
+        },
+      }
+    );
 
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
@@ -145,22 +162,28 @@ router.post( '/token', async ( req, res ) => {
       firstname: user.firstname,
       lastname: user.lastname,
       username: user.username,
+      lastLogin: user.lastLogin,
       id: user._id,
     };
 
     // send email to user
-    await Mailer( 'You just logged in', user.email, '🛡Login Notification', ( err ) => {
-      logger.error( err.message, err );
-    } )
+    await Mailer(
+      'You just logged in',
+      user.email,
+      '🛡Login Notification',
+      (err) => {
+        logger.error(err.message, err);
+      }
+    );
 
-    return res.status( OK ).json( userToken );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).json(userToken);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -188,100 +211,129 @@ router.post( '/token', async ( req, res ) => {
  *           - password
  */
 
-router.post( '/admin/token', async ( req, res ) => {
-  const {
-    email,
-    password
-  } = req.body;
+router.post('/admin/token', async (req, res) => {
+  const { email, password } = req.body;
   try {
-    const user = await Admins.findOne( {
-      email
-    } );
-    if ( !user ) return res.status( BAD_REQUEST ).json( invalidCredentials );
+    const user = await Admins.findOne({
+      email,
+    });
+    if (!user) return res.status(BAD_REQUEST).json(invalidCredentials);
 
-    const isPasswordValid = await decrypt( password, user.password );
-    if ( !isPasswordValid ) {
-      if ( user.loginAttempts >= MAX_LOGIN_ATTEMPTS ) {
-        await Admins.findOneAndUpdate( {
-          email
-        }, {
-          $set: {
-            lockUntil: Date.now() + LOCK_TIME,
-            isLocked: true,
-            loginAttempts: user.loginAttempts + 1,
+    const isPasswordValid = await decrypt(password, user.password);
+    if (!isPasswordValid) {
+      if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+        await Admins.findOneAndUpdate(
+          {
+            email,
           },
-        } );
+          {
+            $set: {
+              lockUntil: Date.now() + LOCK_TIME,
+              isLocked: true,
+              loginAttempts: user.loginAttempts + 1,
+            },
+          }
+        );
 
         // TODO
         // send account lock email here
 
-        return res.status( LOCKED ).json( accountLocked );
+        return res.status(LOCKED).json(accountLocked);
       }
 
-      await Admins.findOneAndUpdate( {
-        email
-      }, {
-        $set: {
-          loginAttempts: user.loginAttempts + 1,
+      await Admins.findOneAndUpdate(
+        {
+          email,
         },
-      } );
+        {
+          $set: {
+            loginAttempts: user.loginAttempts + 1,
+          },
+        }
+      );
 
-      return res.status( BAD_REQUEST ).json( invalidCredentials );
+      return res.status(BAD_REQUEST).json(invalidCredentials);
     }
 
-    if ( user.isLocked ) {
-      if ( user.lockUntil > Date.now() ) {
-        return res.status( LOCKED ).json( accountLocked );
+    if (user.isLocked) {
+      if (user.lockUntil > Date.now()) {
+        return res.status(LOCKED).json(accountLocked);
       } else {
-        await Admins.findOneAndUpdate( {
-          email
-        }, {
+        await Admins.findOneAndUpdate(
+          {
+            email,
+          },
+          {
+            $set: {
+              loginAttempts: 0,
+              lockUntil: null,
+              isLocked: false,
+            },
+          }
+        );
+      }
+    }
+
+    if (user.loginAttempts !== 0) {
+      await Admins.findOneAndUpdate(
+        {
+          email,
+        },
+        {
           $set: {
             loginAttempts: 0,
             lockUntil: null,
             isLocked: false,
           },
-        } );
-      }
-    }
-
-    if ( user.loginAttempts !== 0 ) {
-      await Admins.findOneAndUpdate( {
-        email
-      }, {
-        $set: {
-          loginAttempts: 0,
-          lockUntil: null,
-          isLocked: false,
-        },
-      } );
+        }
+      );
     }
 
     const token = await user.generateAuthToken();
-    if ( !token ) return res.status( BAD_REQUEST ).json( invalidCredentials );
+    if (!token) return res.status(BAD_REQUEST).json(invalidCredentials);
+
+    await Admins.findOneAndUpdate(
+      {
+        email,
+      },
+      {
+        $set: {
+          lastLogin: user.loginTime,
+          loginTime: Date.now(),
+        },
+      }
+    );
 
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
     userToken.user = {
       firstname: user.firstname,
       lastname: user.lastname,
-      username: user.username,
+      email: user.email,
+      imageUrl: user.imageUrl,
+      isActive: user.isActive,
+      lastLogin: user.lastLogin,
       id: user._id,
     };
 
     // send email to user
-    await Mailer( 'You just logged in', user.email, '🛡Login Notification', ( err ) => {
-      logger.error( err.message, err );
-    } )
+    await Mailer(
+      'You just logged in',
+      user.email,
+      '🛡Login Notification',
+      (err) => {
+        logger.error(err.message, err);
+      }
+    );
 
-    return res.status( OK ).json( userToken );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).json(userToken);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -303,32 +355,35 @@ router.post( '/admin/token', async ( req, res ) => {
  *               format: email
  */
 
-router.post( '/forgotPassword', async ( req, res ) => {
-  const {
-    email
-  } = req.body;
+router.post('/forgotPassword', async (req, res) => {
+  const { email } = req.body;
 
   try {
-    const user = await Users.findOne( {
-      _id: email
-    } );
-    if ( user ) {
+    const user = await Users.findOne({
+      _id: email,
+    });
+    if (user) {
       // send email
-      await Mailer( 'You just logged in', email, '🛡Password Reset Request', ( err ) => {
-        logger.error( err.message, err );
-      } )
+      await Mailer(
+        'You just logged in',
+        email,
+        '🛡Password Reset Request',
+        (err) => {
+          logger.error(err.message, err);
+        }
+      );
 
-      return res.status( OK ).send( emailResponse );
+      return res.status(OK).send(emailResponse);
     } else {
-      return res.status( BAD_REQUEST ).send( noResult );
+      return res.status(BAD_REQUEST).send(noResult);
     }
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -355,61 +410,58 @@ router.post( '/forgotPassword', async ( req, res ) => {
  *               type: string
  */
 
-router.put( '/changePassword', async ( req, res ) => {
-  const {
-    userId,
-    oldPassword,
-    newPassword,
-    confirmPassword
-  } = req.body;
+router.put('/changePassword', async (req, res) => {
+  const { userId, oldPassword, newPassword, confirmPassword } = req.body;
 
   try {
-    if (
-      !userId ||
-      !oldPassword ||
-      !newPassword ||
-      !confirmPassword
-    ) {
-      return res.status( BAD_REQUEST ).json( paramMissingError );
+    if (!userId || !oldPassword || !newPassword || !confirmPassword) {
+      return res.status(BAD_REQUEST).json(paramMissingError);
     }
 
-    if ( newPassword !== confirmPassword ) {
-      return res.status( BAD_REQUEST ).json( passwordMatch );
+    if (newPassword !== confirmPassword) {
+      return res.status(BAD_REQUEST).json(passwordMatch);
     }
 
-    const hash = await encrypt( newPassword );
+    const hash = await encrypt(newPassword);
 
-    const user = await Users.findOneAndUpdate( {
-      _id: userId
-    }, {
-      $set: {
-        password: hash,
+    const user = await Users.findOneAndUpdate(
+      {
+        _id: userId,
       },
-    }, {
-      new: true,
-    } ).select( {
+      {
+        $set: {
+          password: hash,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select({
       password: 0,
       __v: 0,
-    } );
+    });
 
-    if ( !user )
-      return res.status( BAD_REQUEST ).send( failedRequest );
+    if (!user) return res.status(BAD_REQUEST).send(failedRequest);
 
     // send email
-    await Mailer( 'You just logged in', user.email, '🛡Password Changed', ( err ) => {
-      logger.error( err.message, err );
-    } )
+    await Mailer(
+      'You just logged in',
+      user.email,
+      '🛡Password Changed',
+      (err) => {
+        logger.error(err.message, err);
+      }
+    );
 
     singleResponse.result = user;
-    return res.status( OK ).send( singleResponse );
-
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(singleResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -436,61 +488,58 @@ router.put( '/changePassword', async ( req, res ) => {
  *               type: string
  */
 
-router.put( '/admin/changePassword', async ( req, res ) => {
-  const {
-    adminId,
-    oldPassword,
-    newPassword,
-    confirmPassword
-  } = req.body;
+router.put('/admin/changePassword', async (req, res) => {
+  const { adminId, oldPassword, newPassword, confirmPassword } = req.body;
 
   try {
-    if (
-      !adminId ||
-      !oldPassword ||
-      !newPassword ||
-      !confirmPassword
-    ) {
-      return res.status( BAD_REQUEST ).json( paramMissingError );
+    if (!adminId || !oldPassword || !newPassword || !confirmPassword) {
+      return res.status(BAD_REQUEST).json(paramMissingError);
     }
 
-    if ( newPassword !== confirmPassword ) {
-      return res.status( BAD_REQUEST ).json( passwordMatch );
+    if (newPassword !== confirmPassword) {
+      return res.status(BAD_REQUEST).json(passwordMatch);
     }
 
-    const hash = await encrypt( newPassword );
+    const hash = await encrypt(newPassword);
 
-    const user = await Admins.findOneAndUpdate( {
-      _id: adminId
-    }, {
-      $set: {
-        password: hash,
+    const user = await Admins.findOneAndUpdate(
+      {
+        _id: adminId,
       },
-    }, {
-      new: true,
-    } ).select( {
+      {
+        $set: {
+          password: hash,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select({
       password: 0,
       __v: 0,
-    } );
+    });
 
-    if ( !user )
-      return res.status( BAD_REQUEST ).send( failedRequest );
+    if (!user) return res.status(BAD_REQUEST).send(failedRequest);
 
     // send email
-    await Mailer( 'You just logged in', user.email, '🛡Password Changed', ( err ) => {
-      logger.error( err.message, err );
-    } )
+    await Mailer(
+      'You just logged in',
+      user.email,
+      '🛡Password Changed',
+      (err) => {
+        logger.error(err.message, err);
+      }
+    );
 
     singleResponse.result = user;
-    return res.status( OK ).send( singleResponse );
-
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(singleResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -517,59 +566,53 @@ router.put( '/admin/changePassword', async ( req, res ) => {
  *               type: string
  */
 
-router.put( '/admin/resetPassword', async ( req, res ) => {
-  const {
-    adminId,
-    newPassword,
-    confirmPassword
-  } = req.body;
+router.put('/admin/resetPassword', async (req, res) => {
+  const { adminId, newPassword, confirmPassword } = req.body;
 
   try {
-    if (
-      !adminId ||
-      !newPassword ||
-      !confirmPassword
-    ) {
-      return res.status( BAD_REQUEST ).json( paramMissingError );
+    if (!adminId || !newPassword || !confirmPassword) {
+      return res.status(BAD_REQUEST).json(paramMissingError);
     }
 
-    if ( newPassword !== confirmPassword ) {
-      return res.status( BAD_REQUEST ).json( passwordMatch );
+    if (newPassword !== confirmPassword) {
+      return res.status(BAD_REQUEST).json(passwordMatch);
     }
 
-    const hash = await encrypt( newPassword );
+    const hash = await encrypt(newPassword);
 
-    const user = await Admins.findOneAndUpdate( {
-      _id: adminId
-    }, {
-      $set: {
-        password: hash,
+    const user = await Admins.findOneAndUpdate(
+      {
+        _id: adminId,
       },
-    }, {
-      new: true,
-    } ).select( {
+      {
+        $set: {
+          password: hash,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select({
       password: 0,
       __v: 0,
-    } );
+    });
 
-    if ( !user )
-      return res.status( BAD_REQUEST ).send( failedRequest );
+    if (!user) return res.status(BAD_REQUEST).send(failedRequest);
 
     // send email
-    await Mailer( 'You just logged in', user.email, '🛡Password Reset', ( err ) => {
-      logger.error( err.message, err );
-    } )
+    await Mailer('You just logged in', user.email, '🛡Password Reset', (err) => {
+      logger.error(err.message, err);
+    });
 
     singleResponse.result = user;
-    return res.status( OK ).send( singleResponse );
-
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(singleResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -596,60 +639,53 @@ router.put( '/admin/resetPassword', async ( req, res ) => {
  *               type: string
  */
 
-router.put( '/resetPassword', async ( req, res ) => {
-  const {
-    userId,
-    newPassword,
-    confirmPassword
-  } = req.body;
+router.put('/resetPassword', async (req, res) => {
+  const { userId, newPassword, confirmPassword } = req.body;
 
   try {
-    if (
-      !userId ||
-      !newPassword ||
-      !confirmPassword
-    ) {
-      return res.status( BAD_REQUEST ).json( paramMissingError );
+    if (!userId || !newPassword || !confirmPassword) {
+      return res.status(BAD_REQUEST).json(paramMissingError);
     }
 
-    if ( newPassword !== confirmPassword ) {
-      return res.status( BAD_REQUEST ).json( passwordMatch );
+    if (newPassword !== confirmPassword) {
+      return res.status(BAD_REQUEST).json(passwordMatch);
     }
 
-    const hash = await encrypt( newPassword );
+    const hash = await encrypt(newPassword);
 
-    const user = await Users.findOneAndUpdate( {
-      _id: userId
-    }, {
-      $set: {
-        password: hash,
+    const user = await Users.findOneAndUpdate(
+      {
+        _id: userId,
       },
-    }, {
-      new: true,
-    } ).select( {
+      {
+        $set: {
+          password: hash,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select({
       password: 0,
       __v: 0,
-    } );
+    });
 
-    if ( !user )
-      return res.status( BAD_REQUEST ).send( failedRequest );
+    if (!user) return res.status(BAD_REQUEST).send(failedRequest);
 
     // send email
-    await Mailer( 'You just logged in', user.email, '🛡Password Reset', ( err ) => {
-      logger.error( err.message, err );
-    } )
+    await Mailer('You just logged in', user.email, '🛡Password Reset', (err) => {
+      logger.error(err.message, err);
+    });
 
     singleResponse.result = user;
-    return res.status( OK ).send( singleResponse );
-
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(singleResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
-
+});
 
 /******************************************************************************
  *                                     Export

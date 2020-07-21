@@ -121,14 +121,14 @@ router.post( '/create', [ Admin, Authenticator ], async ( req, res ) => {
       permissions,
     } = req.body;
 
-    name.trim();
-
     if (
       !name ||
       !permissions
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
+
+    name.trim();
 
     let role = await Roles.findOne( {
       name

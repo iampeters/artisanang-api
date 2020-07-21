@@ -194,10 +194,6 @@ router.post( '/create', async ( req, res ) => {
       duration,
     } = req.body;
 
-    title.trim();
-    description.trim();
-    duration.trim();
-
     if (
       !title ||
       !description ||
@@ -207,6 +203,10 @@ router.post( '/create', async ( req, res ) => {
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
+
+    title.trim();
+    description.trim();
+    duration.trim();
 
     let job = await Jobs.findOne( {
       title
@@ -339,7 +339,7 @@ router.put( '/update/:jobId', Authenticator, async ( req, res ) => {
       },
     }, {
       new: true,
-    } ).populate('artisanId', 'firstname lastname email phone');
+    } ).populate( 'artisanId', 'firstname lastname email phone' );
 
     if ( !job ) {
       return res.status( BAD_REQUEST ).send( failedRequest );

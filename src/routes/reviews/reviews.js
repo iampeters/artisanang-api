@@ -195,9 +195,6 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       rating,
     } = req.body;
 
-    title.trim();
-    description.trim();
-
     if (
       !title ||
       !description ||
@@ -207,6 +204,10 @@ router.post( '/create', Authenticator, async ( req, res ) => {
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
+
+    title.trim();
+    description.trim();
+
 
     let review = await Reviews.findOne( {
       userId
@@ -342,7 +343,7 @@ router.put( '/update/:reviewId', Authenticator, async ( req, res ) => {
       },
     }, {
       new: true,
-    } ).populate('artisanId', 'firstname lastname email phone');
+    } ).populate( 'artisanId', 'firstname lastname email phone' );
 
     if ( !review ) {
       return res.status( BAD_REQUEST ).send( failedRequest );

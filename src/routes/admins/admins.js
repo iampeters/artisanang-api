@@ -21,6 +21,7 @@ const decrypt = require( '../../security/decrypt' );
 const Admins = require( '../../database/models/admins' );
 const Authenticator = require( '../../middlewares/auth' );
 const AdminGuard = require( '../../middlewares/isAdmin' );
+const Mailer = require( '../../engine/mailer' );
 
 //  start
 const router = express.Router();
@@ -109,7 +110,7 @@ router.get( '/', [ AdminGuard, Authenticator ], async ( req, res ) => {
  *    - application/json
  */
 
-router.get( '/:adminId', [AdminGuard, Authenticator], async ( req, res ) => {
+router.get( '/:adminId', [ AdminGuard, Authenticator ], async ( req, res ) => {
   const {
     adminId
   } = req.params;
@@ -171,7 +172,7 @@ router.get( '/:adminId', [AdminGuard, Authenticator], async ( req, res ) => {
  *           - confirmPassword
  */
 
-router.post( '/create', [AdminGuard, Authenticator], async ( req, res ) => {
+router.post( '/create', [ Authenticator, AdminGuard ], async ( req, res ) => {
   try {
     const {
       firstname,
@@ -183,11 +184,6 @@ router.post( '/create', [AdminGuard, Authenticator], async ( req, res ) => {
       imageUrl,
     } = req.body;
 
-    firstname.trim();
-    lastname.trim();
-    phoneNumber.trim();
-    req.body.email.toLowerCase();
-
     if (
       !firstname ||
       !lastname ||
@@ -198,6 +194,11 @@ router.post( '/create', [AdminGuard, Authenticator], async ( req, res ) => {
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
+
+    firstname.trim();
+    lastname.trim();
+    phoneNumber.trim();
+    req.body.email.toLowerCase();
 
     if ( password !== confirmPassword ) {
       return res.status( BAD_REQUEST ).json( passwordMatch );
@@ -227,6 +228,7 @@ router.post( '/create', [AdminGuard, Authenticator], async ( req, res ) => {
       email,
       imageUrl,
       password: req.body.password,
+      loginTime: Date.now()
     } );
 
     const token = await admin.generateAuthToken();
@@ -241,6 +243,7 @@ router.post( '/create', [AdminGuard, Authenticator], async ( req, res ) => {
       email: admin.email,
       phoneNumber: admin.phoneNumber,
       imageUrl: admin.imageUrl,
+      lastLogin: admin.lastLogin
     };
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;

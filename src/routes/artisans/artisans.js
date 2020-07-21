@@ -65,7 +65,7 @@ router.get( '/all', Authenticator, async ( req, res ) => {
       .select( {
         __v: 0,
         password: 0
-      } ).populate('userId', 'firstname lastname _id')
+      } ).populate( 'userId', 'firstname lastname _id' )
       .sort( {
         _id: -1
       } );
@@ -132,7 +132,7 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
       .select( {
         __v: 0,
         password: 0
-      } ).populate('userId', 'firstname lastname _id')
+      } ).populate( 'userId', 'firstname lastname _id' )
       .sort( {
         _id: -1
       } );
@@ -261,17 +261,6 @@ router.post( '/create', async ( req, res ) => {
       NIN
     } = req.body;
 
-    firstname.trim();
-    lastname.trim();
-    address.trim();
-    phoneNumber.trim();
-    specialization.trim();
-    nickname && nickname.trim();
-    businessName && businessName.trim();
-    RCNumber && RCNumber.trim();
-    NIN && NIN.trim();
-    req.body.email.toLowerCase();
-
     if (
       !firstname ||
       !lastname ||
@@ -284,6 +273,17 @@ router.post( '/create', async ( req, res ) => {
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
+
+    firstname.trim();
+    lastname.trim();
+    address.trim();
+    phoneNumber.trim();
+    specialization.trim();
+    nickname && nickname.trim();
+    businessName && businessName.trim();
+    RCNumber && RCNumber.trim();
+    NIN && NIN.trim();
+    req.body.email.toLowerCase();
 
     let user = await Artisans.findOne( {
       email

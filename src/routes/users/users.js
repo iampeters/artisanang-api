@@ -289,12 +289,6 @@ router.post( '/create', async ( req, res ) => {
       address,
     } = req.body;
 
-    firstname.trim();
-    lastname.trim();
-    address.trim();
-    phoneNumber.trim();
-    req.body.email.toLowerCase();
-
     if (
       !firstname ||
       !lastname ||
@@ -305,6 +299,12 @@ router.post( '/create', async ( req, res ) => {
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
+
+    firstname.trim();
+    lastname.trim();
+    address.trim();
+    phoneNumber.trim();
+    req.body.email.toLowerCase();
 
     if ( password !== confirmPassword ) {
       return res.status( BAD_REQUEST ).json( passwordMatch );

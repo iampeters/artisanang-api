@@ -50,7 +50,7 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/', [Admin, Authenticator], async ( req, res ) => {
+router.get( '/', [ Authenticator, Admin ], async ( req, res ) => {
   const pagination = {
     page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
     pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
@@ -124,28 +124,19 @@ router.get( '/', [Admin, Authenticator], async ( req, res ) => {
  *           - createdBy
  */
 
-router.post( '/create', [Admin, Authenticator], async ( req, res ) => {
+router.post( '/create', [ Authenticator, Admin ], async ( req, res ) => {
   try {
     const {
-      name,
-      canRead,
-      canWrite,
-      canUpdate,
-      canDelete,
+      name
     } = req.body;
 
-    name.trim();
-    canRead.trim();
-
     if (
-      !name ||
-      !canRead ||
-      !canWrite ||
-      !canUpdate ||
-      !canDelete
+      !name
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
+
+    name.trim();
 
     let permission = await Permissions.findOne( {
       name
@@ -156,10 +147,6 @@ router.post( '/create', [Admin, Authenticator], async ( req, res ) => {
 
     permission = new Permissions( {
       name,
-      canRead,
-      canWrite,
-      canUpdate,
-      canDelete,
       createdBy: req.user._id
     } );
 
@@ -190,7 +177,7 @@ router.post( '/create', [Admin, Authenticator], async ( req, res ) => {
  *      required: true
  */
 
-router.get( '/:permissionId', [Admin, Authenticator], async ( req, res ) => {
+router.get( '/:permissionId', [ Authenticator, Admin ], async ( req, res ) => {
   const {
     permissionId
   } = req.params;
@@ -248,7 +235,7 @@ router.get( '/:permissionId', [Admin, Authenticator], async ( req, res ) => {
  *           - updatedOn
  */
 
-router.put( '/update/:permissionId', [Admin,Authenticator], async ( req, res ) => {
+router.put( '/update/:permissionId', [ Authenticator, Admin ], async ( req, res ) => {
   try {
     const {
       permissionId
@@ -308,7 +295,7 @@ router.put( '/update/:permissionId', [Admin,Authenticator], async ( req, res ) =
  *      required: true
  */
 
-router.delete( '/delete/:permissionId', [Admin, Authenticator], async ( req, res ) => {
+router.delete( '/delete/:permissionId', [ Authenticator, Admin ], async ( req, res ) => {
   try {
     const {
       permissionId

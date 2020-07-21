@@ -78,6 +78,14 @@ const userSchema = new Schema( {
     type: Boolean,
     default: true,
   },
+  loginTime: {
+    type: Date,
+    default: Date.now
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
   createdOn: {
     type: Date,
     default: Date.now
@@ -99,9 +107,6 @@ const userSchema = new Schema( {
 userSchema.methods.generateAuthToken = function () {
   const token = jwt.sign( {
       _id: this._id,
-      email: this.email,
-      firstname: this.firstname,
-      lastname: this.lastname,
       type: 'access_token',
     },
     config.get( 'jwtPrivateKey' ), {

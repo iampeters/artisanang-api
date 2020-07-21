@@ -43,6 +43,11 @@ const permissionsSchema = new Schema( {
     type: String,
     ref: Users,
     default: null
+  },
+  createdBy: {
+    type: String,
+    ref: Users,
+    default: null
   }
 } );
 

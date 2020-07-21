@@ -8,7 +8,7 @@ const errors = ( err, req, res, next ) => {
 				hasErrors: true,
 				hasResults: false,
 				successful: false,
-				errorMessage: 'Invalid request'
+				message: 'Invalid request'
 			} );
 			break;
 
@@ -18,7 +18,7 @@ const errors = ( err, req, res, next ) => {
 				hasErrors: true,
 				hasResults: false,
 				successful: false,
-				errorMessage: 'Oops! Something went wrong.'
+				message: 'Oops! Something went wrong.'
 			} );
 	}
 

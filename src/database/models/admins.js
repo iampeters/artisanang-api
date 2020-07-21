@@ -65,6 +65,14 @@ const adminSchema = new Schema( {
     type: Date,
     default: Date.now
   },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
+  loginTime: {
+    type: Date,
+    default: Date.now
+  },
   updateOn: {
     type: Date,
     default: null
