@@ -2,5 +2,5 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/artisan3/public_html
-    - /bin/cp -R . $DEPLOYPATH/api
+    # - /bin/cp -R . $DEPLOYPATH/api
     - /bin/cp -R . $DEPLOYPATH/sandbox
