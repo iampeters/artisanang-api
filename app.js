@@ -7,6 +7,7 @@ const path = require('path');
 const http = require('http');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const cors = require('cors');
 
 const BaseRouter = require(path.resolve('src/routes'));
 const swaggerUi = require('swagger-ui-express');
@@ -25,6 +26,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api', BaseRouter);
