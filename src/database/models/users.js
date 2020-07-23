@@ -1,17 +1,17 @@
-const mongoose = require( 'mongoose' );
-const config = require( 'config' );
-const jwt = require( 'jsonwebtoken' );
-const bcrypt = require( 'bcrypt' );
+const mongoose = require('mongoose');
+const config = require('config');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
 
-const userSchema = new Schema( {
+const userSchema = new Schema({
   email: {
     type: String,
     required: true,
     default: null,
-    unique: true
+    unique: true,
   },
   firstname: {
     type: String,
@@ -30,8 +30,7 @@ const userSchema = new Schema( {
     maxlength: 11,
     minlength: 11,
     default: null,
-    required: true,
-    unique: true
+    unique: true,
   },
   imageUrl: {
     type: String,
@@ -40,7 +39,7 @@ const userSchema = new Schema( {
   address: {
     type: String,
     default: null,
-    unique: true
+    unique: true,
   },
   state: {
     type: String,
@@ -57,10 +56,10 @@ const userSchema = new Schema( {
   loginAttempts: {
     type: Number,
     required: true,
-    default: 0
+    default: 0,
   },
   lockUntil: {
-    type: Number
+    type: Number,
   },
   isLocked: {
     type: Boolean,
@@ -80,60 +79,76 @@ const userSchema = new Schema( {
   },
   loginTime: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   lastLogin: {
     type: Date,
-    default: null
+    default: null,
   },
   createdOn: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updateOn: {
     type: Date,
-    default: null
+    default: null,
   },
   updatedBy: {
     type: String,
-    default: null
+    default: null,
   },
   isAdmin: {
     type: Boolean,
-    default: false
-  }
-} );
+    default: false,
+  },
+});
 
 userSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign( {
+  const token = jwt.sign(
+    {
       _id: this._id,
       type: 'access_token',
     },
-    config.get( 'jwtPrivateKey' ), {
+    config.get('jwtPrivateKey'),
+    {
       expiresIn: '3d',
     }
   );
 
-  const refresh_token = jwt.sign( {
+  const refresh_token = jwt.sign(
+    {
       _id: this._id,
       type: 'refresh_token',
     },
-    config.get( 'refreshTokenPrivateKey' ), {
+    config.get('refreshTokenPrivateKey'),
+    {
       expiresIn: '7d',
     }
   );
   return {
     token,
-    refresh_token
+    refresh_token,
   };
+};
+
+userSchema.methods.generatePassword = function () {
+  const length = 8;
+  const chars =
+    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let result = '';
+
+  for (let i = length; i > 0; --i) {
+    result += chars[Math.round(Math.random() * (chars.length - 1))];
+  }
+  return result;
 };
 
 // encrypt password
 userSchema.methods.encrypt = () => {
-  const encrypt = async ( password ) => {
-    if ( !password ) throw Error( 'Password is required.' );
-    const salt = await bcrypt.genSalt( 10 );
-    const hash = await bcrypt.hash( password, salt );
+  const encrypt = async (password) => {
+    if (!password) throw Error('Password is required.');
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
     return hash;
   };
 
@@ -142,14 +157,14 @@ userSchema.methods.encrypt = () => {
 
 // decrypt password
 userSchema.methods.decrypt = () => {
-  const decrypt = async ( password, hash ) => {
-    const result = await bcrypt.compare( password, hash );
+  const decrypt = async (password, hash) => {
+    const result = await bcrypt.compare(password, hash);
     return result;
   };
 
   return decrypt;
 };
 
-const Users = model( 'Users', userSchema, 'users' );
+const Users = model('Users', userSchema, 'users');
 
 module.exports = Users;

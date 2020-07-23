@@ -678,6 +678,55 @@ router.put( '/resetPassword', async ( req, res ) => {
   }
 } );
 
+/**
+ * @swagger
+ * /api/identity/create:
+ *   post:
+ *     tags:
+ *       - Users
+ *     name: Create
+ *     summary: Create a user
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             firstname:
+ *               type: string
+ *             lastname:
+ *               type: string
+ *             email:
+ *               type: string
+ *               format: email
+ *             phoneNumber:
+ *               type: string
+ *             address:
+ *               type: string
+ *             state:
+ *               type: string
+ *             country:
+ *               type: string
+ *             password:
+ *               type: string
+ *             confirmPassword:
+ *               type: string
+ *             imageUrl:
+ *               type: string
+ *         required:
+ *           - firstname
+ *           - lastname
+ *           - email
+ *           - phoneNumber
+ *           - address
+ *           - password
+ *           - confirmPassword
+ *           - state
+ *           - Country
+ */
+
 /******************************************************************************
  *                                     Export
  ******************************************************************************/
