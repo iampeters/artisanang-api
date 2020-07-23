@@ -235,7 +235,7 @@ router.get('/:artisanId', Authenticator, async (req, res) => {
  *           - userId
  */
 
-router.post('/create', async (req, res) => {
+router.post('/create', Authenticator, async (req, res) => {
   try {
     const {
       firstname,
@@ -246,10 +246,11 @@ router.post('/create', async (req, res) => {
       address,
       specialization,
       nickname,
-      userId,
       businessName,
       RCNumber,
       NIN,
+      state,
+      country,
     } = req.body;
 
     if (
@@ -259,8 +260,7 @@ router.post('/create', async (req, res) => {
       !phoneNumber ||
       !address ||
       !specialization ||
-      !imageUrl ||
-      !userId
+      !imageUrl
     ) {
       return res.status(BAD_REQUEST).json(paramMissingError);
     }
@@ -306,10 +306,12 @@ router.post('/create', async (req, res) => {
       imageUrl,
       nickname,
       specialization,
-      userId,
+      userId: req.user._id,
       businessName,
       RCNumber,
       NIN,
+      state,
+      country,
     });
 
     await user.save();

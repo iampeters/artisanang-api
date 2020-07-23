@@ -24,6 +24,7 @@ const Mailer = require( '../../engine/mailer' );
 
 const Users = require( '../../database/models/users' );
 const Admins = require( '../../database/models/admins' );
+const RefreshToken = require( '../../middlewares/refreshToken' );
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_TIME = 0.5 * 60 * 60 * 1000;
@@ -181,6 +182,56 @@ router.post( '/token', async ( req, res ) => {
     } );
   }
 } );
+
+/**
+ * @swagger
+ * /api/identity/refresh:
+ *   post:
+ *     tags:
+ *       - Identity
+ *     name: Token
+ *     summary: Refresh token
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             auth_token:
+ *               type: string
+ *         required:
+ *           - auth_token
+ */
+
+ router.post('/refresh', RefreshToken, async (req, res) => {
+   const { auth_token } = req.body;
+   try {
+     const user = await Users.findOne({
+       _id: req.user._id,
+     });
+     if (!user) return res.status(BAD_REQUEST).json(invalidCredentials);
+
+     if (!user.isActive) return res.status(BAD_REQUEST).json(accountBlocked);
+
+     const token = await user.generateAuthToken();
+     if (!token) return res.status(BAD_REQUEST).json(invalidCredentials);
+
+     userToken.token = token.token;
+     userToken.refresh_token = token.refresh_token;
+     delete userToken.permissions;
+     delete userToken.user;
+
+     return res.status(OK).json(userToken);
+   } catch (err) {
+     logger.error(err.message, err);
+     return res.status(BAD_REQUEST).json({
+       error: err.message,
+     });
+   }
+ });
+
 
 /**
  * @swagger

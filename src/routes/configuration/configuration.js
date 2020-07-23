@@ -7,19 +7,12 @@ const {
 
 const logger = require( '../../shared/Logger' );
 const {
-  paramMissingError,
   singleResponse,
-  duplicateEntry,
-  paginatedResponse,
-  noResult,
   failedRequest,
 } = require( '../../shared/constants' );
 
-const Artisans = require( '../../database/models/artisans' );
-const Users = require( '../../database/models/users' );
-const Reviews = require( '../../database/models/reviews' );
+
 const Authenticator = require( '../../middlewares/auth' );
-const Admin = require( '../../middlewares/isAdmin' );
 const Uploader = require( '../../engine/uploader' );
 
 //  start
