@@ -67,13 +67,9 @@ router.get( '/', [ Admin, Authenticator ], async ( req, res ) => {
       } );
     const total = await Roles.countDocuments( whereCondition );
 
-    const data = {
-      items: roles,
-      total,
-    };
-
     // Paginated Response
-    paginatedResponse.result = data;
+    paginatedResponse.items = roles;
+    paginatedResponse.total = total;
 
     return res.status( OK ).send( paginatedResponse );
   } catch ( err ) {

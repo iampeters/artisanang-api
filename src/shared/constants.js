@@ -30,7 +30,8 @@ const paginatedResponse = {
   hasErrors: false,
   hasResults: true,
   successful: true,
-  result: {},
+  items: [],
+  total: 0
 };
 
 const duplicateEntry = {

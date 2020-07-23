@@ -1,11 +1,8 @@
-require( 'module-alias/register' );
-const express = require( 'express' );
-const {
-  BAD_REQUEST,
-  OK,
-} = require( 'http-status-codes' );
+require('module-alias/register');
+const express = require('express');
+const { BAD_REQUEST, OK } = require('http-status-codes');
 
-const logger = require( '../../shared/Logger' );
+const logger = require('../../shared/Logger');
 const {
   paramMissingError,
   singleResponse,
@@ -14,14 +11,14 @@ const {
   noResult,
   userToken,
   failedRequest,
-} = require( '../../shared/constants' );
-const encrypt = require( '../../security/encrypt' );
-const decrypt = require( '../../security/decrypt' );
+} = require('../../shared/constants');
+const encrypt = require('../../security/encrypt');
+const decrypt = require('../../security/decrypt');
 
-const Admins = require( '../../database/models/admins' );
-const Authenticator = require( '../../middlewares/auth' );
-const AdminGuard = require( '../../middlewares/isAdmin' );
-const Mailer = require( '../../engine/mailer' );
+const Admins = require('../../database/models/admins');
+const Authenticator = require('../../middlewares/auth');
+const AdminGuard = require('../../middlewares/isAdmin');
+const Mailer = require('../../engine/mailer');
 
 //  start
 const router = express.Router();
@@ -54,44 +51,41 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/', [ AdminGuard, Authenticator ], async ( req, res ) => {
+router.get('/', [AdminGuard, Authenticator], async (req, res) => {
   const pagination = {
-    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
-    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
+    page: req.query.page ? parseInt(req.query.page, 10) : 1,
+    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
   };
 
-  const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) : {};
+  const whereCondition = req.query.whereCondition
+    ? JSON.parse(req.query.whereCondition)
+    : {};
 
   try {
-    const admins = await Admins.find( whereCondition )
-      .skip( ( pagination.page - 1 ) * pagination.pageSize )
-      .limit( pagination.pageSize )
-      .select( {
+    const admins = await Admins.find(whereCondition)
+      .skip((pagination.page - 1) * pagination.pageSize)
+      .limit(pagination.pageSize)
+      .select({
         __v: 0,
-        password: 0
-      } )
-      .sort( {
-        _id: -1
-      } );
-    const total = await Admins.countDocuments( whereCondition );
-
-    const data = {
-      items: admins,
-      total,
-    };
+        password: 0,
+      })
+      .sort({
+        _id: -1,
+      });
+    const total = await Admins.countDocuments(whereCondition);
 
     // Paginated Response
-    paginatedResponse.result = data;
+    paginatedResponse.items = admins;
+    paginatedResponse.total = total;
 
-    return res.status( OK ).send( paginatedResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(paginatedResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -110,27 +104,25 @@ router.get( '/', [ AdminGuard, Authenticator ], async ( req, res ) => {
  *    - application/json
  */
 
-router.get( '/:adminId', [ AdminGuard, Authenticator ], async ( req, res ) => {
-  const {
-    adminId
-  } = req.params;
+router.get('/:adminId', [AdminGuard, Authenticator], async (req, res) => {
+  const { adminId } = req.params;
   try {
-    const admin = await Admins.findOne( {
-      _id: adminId
-    } );
-    if ( admin ) {
+    const admin = await Admins.findOne({
+      _id: adminId,
+    });
+    if (admin) {
       singleResponse.result = admin;
-      return res.status( OK ).send( singleResponse );
+      return res.status(OK).send(singleResponse);
     } else {
-      return res.status( BAD_REQUEST ).send( noResult );
+      return res.status(BAD_REQUEST).send(noResult);
     }
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -175,7 +167,7 @@ router.get( '/:adminId', [ AdminGuard, Authenticator ], async ( req, res ) => {
  *           - permissions
  */
 
-router.post( '/create', [ Authenticator, AdminGuard ], async ( req, res ) => {
+router.post('/create', [Authenticator, AdminGuard], async (req, res) => {
   try {
     const {
       firstname,
@@ -195,7 +187,7 @@ router.post( '/create', [ Authenticator, AdminGuard ], async ( req, res ) => {
       !phoneNumber ||
       !confirmPassword
     ) {
-      return res.status( BAD_REQUEST ).json( paramMissingError );
+      return res.status(BAD_REQUEST).json(paramMissingError);
     }
 
     firstname.trim();
@@ -203,39 +195,39 @@ router.post( '/create', [ Authenticator, AdminGuard ], async ( req, res ) => {
     phoneNumber.trim();
     req.body.email.toLowerCase();
 
-    if ( password !== confirmPassword ) {
-      return res.status( BAD_REQUEST ).json( passwordMatch );
+    if (password !== confirmPassword) {
+      return res.status(BAD_REQUEST).json(passwordMatch);
     }
 
-    let admin = await Admins.findOne( {
-      email
-    } );
-    if ( admin ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    let admin = await Admins.findOne({
+      email,
+    });
+    if (admin) {
+      return res.status(BAD_REQUEST).json(duplicateEntry);
     }
 
-    const phone = await Admins.findOne( {
-      phoneNumber
-    } );
-    if ( phone ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    const phone = await Admins.findOne({
+      phoneNumber,
+    });
+    if (phone) {
+      return res.status(BAD_REQUEST).json(duplicateEntry);
     }
 
-    const hash = await encrypt( password );
+    const hash = await encrypt(password);
     req.body.password = hash;
 
-    admin = new Admins( {
+    admin = new Admins({
       firstname,
       lastname,
       phoneNumber,
       email,
       imageUrl,
       password: req.body.password,
-      loginTime: Date.now()
-    } );
+      loginTime: Date.now(),
+    });
 
     const token = await admin.generateAuthToken();
-    if ( !token ) return res.status( BAD_REQUEST ).json( failedRequest );
+    if (!token) return res.status(BAD_REQUEST).json(failedRequest);
 
     await admin.save();
 
@@ -246,7 +238,7 @@ router.post( '/create', [ Authenticator, AdminGuard ], async ( req, res ) => {
       email: admin.email,
       phoneNumber: admin.phoneNumber,
       imageUrl: admin.imageUrl,
-      lastLogin: admin.lastLogin
+      lastLogin: admin.lastLogin,
     };
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
@@ -254,17 +246,22 @@ router.post( '/create', [ Authenticator, AdminGuard ], async ( req, res ) => {
 
     // send onboarding email
     // send email to admin
-    await Mailer( 'Welcome to Artisana Admin', admin.email, 'Welcome to Artisana Admin 🎉', ( err ) => {
-      logger.error( err.message, err );
-    } )
-    return res.status( OK ).send( userToken );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    await Mailer(
+      'Welcome to Artisana Admin',
+      admin.email,
+      'Welcome to Artisana Admin 🎉',
+      (err) => {
+        logger.error(err.message, err);
+      }
+    );
+    return res.status(OK).send(userToken);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -299,54 +296,61 @@ router.post( '/create', [ Authenticator, AdminGuard ], async ( req, res ) => {
  *               type: string
  */
 
-router.put( '/update/:adminId', [ AdminGuard, Authenticator ], async ( req, res ) => {
-  try {
-    const {
-      adminId
-    } = req.params;
-    const {
-      firstname,
-      lastname,
-      email,
-      phoneNumber,
-      imageUrl,
-    } = req.body;
+router.put(
+  '/update/:adminId',
+  [AdminGuard, Authenticator],
+  async (req, res) => {
+    try {
+      const { adminId } = req.params;
+      const { firstname, lastname, email, phoneNumber, imageUrl } = req.body;
 
-    if ( !firstname || !lastname || !adminId || !email || !phoneNumber || !imageUrl )
-      return res.status( BAD_REQUEST ).send( paramMissingError );
+      if (
+        !firstname ||
+        !lastname ||
+        !adminId ||
+        !email ||
+        !phoneNumber ||
+        !imageUrl
+      )
+        return res.status(BAD_REQUEST).send(paramMissingError);
 
-    const admin = await Admins.findOneAndUpdate( {
-      _id: adminId
-    }, {
-      $set: {
-        firstname,
-        lastname,
-        firstname,
-        lastname,
-        email,
-        phoneNumber,
-        imageUrl,
-      },
-    }, {
-      new: true,
-    } ).select( {
-      password: 0,
-      __v: 0,
-    } );
+      const admin = await Admins.findOneAndUpdate(
+        {
+          _id: adminId,
+        },
+        {
+          $set: {
+            firstname,
+            lastname,
+            firstname,
+            lastname,
+            email,
+            phoneNumber,
+            imageUrl,
+          },
+        },
+        {
+          new: true,
+        }
+      ).select({
+        password: 0,
+        __v: 0,
+      });
 
-    if ( !admin ) {
-      return res.status( BAD_REQUEST ).send( failedRequest );
+      if (!admin) {
+        return res.status(BAD_REQUEST).send(failedRequest);
+      }
+
+      singleResponse.result = admin;
+      return res.status(OK).send(singleResponse);
+    } catch (err) {
+      logger.error(err.message, err);
+      return res.status(BAD_REQUEST).json({
+        error: err.message,
+      });
     }
-
-    singleResponse.result = admin;
-    return res.status( OK ).send( singleResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
-      error: err.message,
-    } );
   }
-} );
+);
 
 /**
  * @swagger
@@ -362,28 +366,30 @@ router.put( '/update/:adminId', [ AdminGuard, Authenticator ], async ( req, res 
  *      required: true
  */
 
-router.delete( '/delete/:adminId', [ AdminGuard, Authenticator ], async ( req, res ) => {
-  try {
-    const {
-      adminId
-    } = req.params;
-    const admin = await Admins.findOneAndDelete( {
-      _id: adminId
-    } );
+router.delete(
+  '/delete/:adminId',
+  [AdminGuard, Authenticator],
+  async (req, res) => {
+    try {
+      const { adminId } = req.params;
+      const admin = await Admins.findOneAndDelete({
+        _id: adminId,
+      });
 
-    if ( admin ) {
-      singleResponse.result = admin;
-      return res.status( OK ).send( singleResponse );
-    } else {
-      return res.status( BAD_REQUEST ).send( singleResponse );
+      if (admin) {
+        singleResponse.result = admin;
+        return res.status(OK).send(singleResponse);
+      } else {
+        return res.status(BAD_REQUEST).send(singleResponse);
+      }
+    } catch (err) {
+      logger.error(err.message, err);
+      return res.status(BAD_REQUEST).json({
+        error: err.message,
+      });
     }
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
-      error: err.message,
-    } );
   }
-} );
+);
 
 /******************************************************************************
  *                                     Export

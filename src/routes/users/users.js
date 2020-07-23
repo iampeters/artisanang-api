@@ -83,13 +83,9 @@ router.get('/all', Authenticator, async (req, res) => {
       });
     const total = await Users.countDocuments(whereCondition);
 
-    const data = {
-      items: users,
-      total,
-    };
-
     // Paginated Response
-    paginatedResponse.result = data;
+    paginatedResponse.items = users;
+    paginatedResponse.total = total;
 
     return res.status(OK).send(paginatedResponse);
   } catch (err) {
@@ -161,13 +157,9 @@ router.get('/admin/all', Authenticator, async (req, res) => {
       });
     const total = await Users.countDocuments(whereCondition);
 
-    const data = {
-      items: users,
-      total,
-    };
-
     // Paginated Response
-    paginatedResponse.result = data;
+    paginatedResponse.items = users;
+    paginatedResponse.total = total;
 
     return res.status(OK).send(paginatedResponse);
   } catch (err) {

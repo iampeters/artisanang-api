@@ -68,13 +68,9 @@ router.get( '/all', Authenticator, async ( req, res ) => {
       } );
     const total = await Reviews.countDocuments( whereCondition );
 
-    const data = {
-      items: reviews,
-      total,
-    };
-
     // Paginated Response
-    paginatedResponse.result = data;
+    paginatedResponse.items = reviews;
+    paginatedResponse.total = total;
 
     return res.status( OK ).send( paginatedResponse );
   } catch ( err ) {
@@ -131,13 +127,9 @@ router.get( '/admin/all', [ Authenticator, Admin ], async ( req, res ) => {
       } );
     const total = await Reviews.countDocuments( whereCondition );
 
-    const data = {
-      items: reviews,
-      total,
-    };
-
     // Paginated Response
-    paginatedResponse.result = data;
+    paginatedResponse.items = reviews;
+    paginatedResponse.total = total;
 
     return res.status( OK ).send( paginatedResponse );
   } catch ( err ) {
