@@ -221,7 +221,7 @@ router.post('/create', async (req, res) => {
  *  get:
  *   summary: Get job details
  *   tags:
- *     - Reviews
+ *     - Jobs
  *   parameters:
  *    - in: path
  *      name: jobId

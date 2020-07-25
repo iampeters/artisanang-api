@@ -74,6 +74,14 @@ const artisansSchema = new Schema( {
     default: null,
     unique: true
   },
+  state: {
+    type: String,
+    default: null,
+  },
+  country: {
+    type: String,
+    default: null,
+  },
   createdOn: {
     type: Date,
     default: Date.now

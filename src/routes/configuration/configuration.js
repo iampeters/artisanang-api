@@ -33,6 +33,7 @@ const router = express.Router();
  */
 
 router.post( '/fileUpload', Authenticator, async ( req, res ) => {
+
   try {
     const upload = new Uploader();
     const err = await upload.startUpload( req, res );

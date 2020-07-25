@@ -54,7 +54,7 @@ class Uploader {
         if (process.env.NODE_ENV !== 'production') {
           req.body.imageUrl = 'http://localhost:5000/images/' + req.files[x].filename;
         } else {
-          req.body.imageUrl = 'https://es-config-ms.azurewebsites.net/images/' + req.files[ x ].filename;
+          req.body.imageUrl = 'https://sandbox.artisana.ng/images/' + req.files[ x ].filename;
         }
       }
 

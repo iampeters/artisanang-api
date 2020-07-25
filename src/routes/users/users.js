@@ -274,24 +274,19 @@ router.post('/create', async (req, res) => {
       email,
       password,
       phoneNumber,
-      confirmPassword,
       imageUrl,
       address,
     } = req.body;
 
-    if (!firstname || !lastname || !email || !password || !confirmPassword) {
+    if (!firstname || !lastname || !email || !password) {
       return res.status(BAD_REQUEST).json(paramMissingError);
     }
 
     firstname.trim();
     lastname.trim();
-    address.trim();
+    address && address.trim();
     phoneNumber && phoneNumber.trim();
-    req.body.email.toLowerCase();
-
-    if (password !== confirmPassword) {
-      return res.status(BAD_REQUEST).json(passwordMatch);
-    }
+    email.toLowerCase();
 
     let user = await Users.findOne({
       email,
