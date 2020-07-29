@@ -5,6 +5,7 @@
   "emailPassword": "emailPassword",
   "jwtPrivateKey": "jwtPrivateKey",
   "refreshTokenPrivateKey": "refreshTokenPrivateKey",
+  "passwordRecoveryPrivateKey": "passwordRecoveryPrivateKey",
   "db": "connectionString",
   "host": "host",
   "mailer": "mailer",

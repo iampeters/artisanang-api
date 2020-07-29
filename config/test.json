@@ -1,6 +1,7 @@
 {
     "app-name": "Equipment Share API",
     "environment": "test",
+    "passwordRecoveryPrivateKey": "passwordRecoveryPrivateKey",
     "db": "mongodb+srv://admin:artisanang2020@artisanang.zpjmj.mongodb.net/test?retryWrites=true",
 		"level":"error"
 }

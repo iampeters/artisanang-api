@@ -68,6 +68,8 @@ router.get('/', [Authenticator, AdminGuard], async (req, res) => {
       .select({
         __v: 0,
         password: 0,
+        loginAttempts: 0,
+        loginTime: 0
       })
       .sort({
         _id: -1,

@@ -3,6 +3,7 @@
   "environment": "development",
   "jwtPrivateKey": "jwtPrivateKey",
   "refreshTokenPrivateKey": "refreshTokenPrivateKey",
+  "passwordRecoveryPrivateKey": "passwordRecoveryPrivateKey",
   "emailUser": "emailUser",
   "emailPassword": "emailPassword",
   "db": "connectionString",

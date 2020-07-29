@@ -127,6 +127,20 @@ userSchema.methods.generateAuthToken = function () {
   };
 };
 
+userSchema.methods.generatePasswordRecoveryToken = function () {
+  const token = jwt.sign(
+    {
+      _id: this._id,
+      type: 'password_recovery',
+    },
+    config.get('jwtPrivateKey'),
+    {
+      expiresIn: '5m',
+    }
+  );
+  return token;
+};
+
 userSchema.methods.generatePassword = function () {
   const length = 8;
   const chars =
@@ -137,28 +151,6 @@ userSchema.methods.generatePassword = function () {
     result += chars[Math.round(Math.random() * (chars.length - 1))];
   }
   return result;
-};
-
-// encrypt password
-userSchema.methods.encrypt = () => {
-  const encrypt = async (password) => {
-    if (!password) throw Error('Password is required.');
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
-    return hash;
-  };
-
-  return encrypt;
-};
-
-// decrypt password
-userSchema.methods.decrypt = () => {
-  const decrypt = async (password, hash) => {
-    const result = await bcrypt.compare(password, hash);
-    return result;
-  };
-
-  return decrypt;
 };
 
 const Users = model('Users', userSchema, 'users');

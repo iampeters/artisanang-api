@@ -4,6 +4,7 @@
     "emailUser": "emailUser",
     "emailPassword": "emailPassword",
     "db": "connectionString",
+    "passwordRecoveryPrivateKey": "passwordRecoveryPrivateKey",
     "host":"host",
     "mailer":"mailer",
 		"level": "error"
