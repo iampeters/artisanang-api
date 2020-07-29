@@ -51,7 +51,7 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get('/', [AdminGuard, Authenticator], async (req, res) => {
+router.get('/', [Authenticator, AdminGuard], async (req, res) => {
   const pagination = {
     page: req.query.page ? parseInt(req.query.page, 10) : 1,
     pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
@@ -104,7 +104,7 @@ router.get('/', [AdminGuard, Authenticator], async (req, res) => {
  *    - application/json
  */
 
-router.get('/:adminId', [AdminGuard, Authenticator], async (req, res) => {
+router.get('/:adminId', [Authenticator, AdminGuard], async (req, res) => {
   const { adminId } = req.params;
   try {
     const admin = await Admins.findOne({
@@ -298,7 +298,7 @@ router.post('/create', [Authenticator, AdminGuard], async (req, res) => {
 
 router.put(
   '/update/:adminId',
-  [AdminGuard, Authenticator],
+  [Authenticator, AdminGuard],
   async (req, res) => {
     try {
       const { adminId } = req.params;
@@ -368,7 +368,7 @@ router.put(
 
 router.delete(
   '/delete/:adminId',
-  [AdminGuard, Authenticator],
+  [Authenticator, AdminGuard],
   async (req, res) => {
     try {
       const { adminId } = req.params;
