@@ -3,19 +3,20 @@ const express = require( 'express' );
 const {
   BAD_REQUEST,
   OK,
+  FAILED_DEPENDENCY,
 } = require( 'http-status-codes' );
 
 const logger = require( '../../shared/Logger' );
 const {
   paramMissingError,
   singleResponse,
-  duplicateEntry,
   paginatedResponse,
   noResult,
   failedRequest,
 } = require( '../../shared/constants' );
 
 const Reviews = require( '../../database/models/reviews' );
+const Artisan = require( '../../database/models/artisans' );
 const Authenticator = require( '../../middlewares/auth' );
 const Admin = require( '../../middlewares/isAdmin' );
 
@@ -65,7 +66,7 @@ router.get( '/all', Authenticator, async ( req, res ) => {
       .limit( pagination.pageSize )
       .sort( {
         _id: -1
-      } );
+      } ).populate( 'userId', 'firstname lastname _id imageUrl' );
     const total = await Reviews.countDocuments( whereCondition );
 
     // Paginated Response
@@ -201,12 +202,12 @@ router.post( '/create', Authenticator, async ( req, res ) => {
     description.trim();
 
 
-    let review = await Reviews.findOne( {
-      userId
-    } );
-    if ( review ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
-    }
+    // let review = await Reviews.findOne( {
+    //   userId
+    // } );
+    // if ( review ) {
+    //   return res.status( BAD_REQUEST ).json( duplicateEntry );
+    // }
 
     review = new Reviews( {
       title,
@@ -218,8 +219,73 @@ router.post( '/create', Authenticator, async ( req, res ) => {
 
     await review.save();
 
-    singleResponse.result = review
+    // TODO - calculate artisan rating and get total reviews
+    const totalReviews = await Reviews.countDocuments( {
+      artisanId
+    } );
 
+    const allReviews = await Reviews.find( {
+      artisanId
+    } );
+
+    // review calculation
+    let reviewType = {
+      lessThanOne: 0,
+      one: 0,
+      onePoint5: 0,
+      two: 0,
+      twoPoint5: 0,
+      three: 0,
+      threePoint5: 0,
+      four: 0,
+      fourPoint5: 0,
+      five: 0
+    };
+
+    let Ratings = [ 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5 ];
+
+    allReviews.filter( review => {
+      if ( review.rating < 1 ) reviewType.lessThanOne += 1;
+      if ( review.rating == 1 ) reviewType.one += 1;
+      if ( review.rating == 1.5 ) reviewType.onePoint5 += 1;
+      if ( review.rating == 2 ) reviewType.two += 1;
+      if ( review.rating == 2.5 ) reviewType.twoPoint5 += 1;
+      if ( review.rating == 3 ) reviewType.three += 1;
+      if ( review.rating == 3.5 ) reviewType.threePoint5 += 1;
+      if ( review.rating == 4 ) reviewType.four += 1;
+      if ( review.rating == 4.5 ) reviewType.fourPoint5 += 1;
+      if ( review.rating == 5 ) reviewType.five += 1;
+    } )
+
+    function calcRating() {
+      let totalAverage = 0;
+      let i = 1;
+      for ( const x in reviewType ) {
+        if ( reviewType.hasOwnProperty( x ) ) {
+          if ( i === Object.entries( reviewType ).length ) break;
+          totalAverage += Ratings[ i ] * reviewType[ x ];
+          i++;
+        }
+      }
+      return Math.round( totalAverage / totalReviews )
+    }
+
+    calculatedRating = calcRating();
+
+    const user = await Artisan.findOneAndUpdate( {
+      _id: artisanId
+    }, {
+      $set: {
+        rating: calculatedRating,
+        reviews: totalReviews,
+      },
+    }, {
+      new: true,
+    } ).populate( 'artisanId', 'firstname lastname email phone' );
+
+    if ( !user ) return res.status( FAILED_DEPENDENCY ).send( failedRequest );
+
+    singleResponse.result = review
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );
@@ -250,8 +316,11 @@ router.get( '/:reviewId', Authenticator, async ( req, res ) => {
   } = req.params;
   try {
     const review = await Reviews.findOne( {
-      _id: reviewId
-    } );
+        _id: reviewId
+      } )
+      .populate( 'artisanId', 'firstname lastname email phone imageUrl' )
+      .populate( 'userId', 'firstname lastname email phone imageUrl' );
+
     if ( review ) {
       singleResponse.result = review;
       return res.status( OK ).send( singleResponse );

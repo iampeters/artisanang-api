@@ -23,7 +23,15 @@ const artisansSchema = new Schema( {
     default: null,
     required: true,
   },
+  name: {
+    type: String,
+    default: null,
+  },
   rating: {
+    type: Number,
+    default: 0,
+  },
+  reviews: {
     type: Number,
     default: 0,
   },

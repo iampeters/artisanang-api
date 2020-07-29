@@ -275,7 +275,6 @@ router.post('/create', async (req, res) => {
       password,
       phoneNumber,
       imageUrl,
-      address,
     } = req.body;
 
     if (!firstname || !lastname || !email || !password) {
@@ -284,7 +283,6 @@ router.post('/create', async (req, res) => {
 
     firstname.trim();
     lastname.trim();
-    address && address.trim();
     phoneNumber && phoneNumber.trim();
     email.toLowerCase();
 
@@ -305,17 +303,29 @@ router.post('/create', async (req, res) => {
       }
     }
 
+    if (phoneNumber === null) delete req.body.phoneNumber;
+
+    // if (address) {
+    //   const phone = await Users.findOne({
+    //     address,
+    //   });
+
+    //   if (phone) {
+    //     return res.status(BAD_REQUEST).json(duplicateEntry);
+    //   }
+    // }
+
     const hash = await encrypt(password);
     req.body.password = hash;
 
     user = new Users({
       firstname,
       lastname,
-      address,
       phoneNumber,
       email,
       imageUrl,
       password: req.body.password,
+      name: `${firstname} ${lastname}`
     });
 
     const token = await user.generateAuthToken();

@@ -10,40 +10,36 @@ const userSchema = new Schema({
   email: {
     type: String,
     required: true,
-    default: null,
     unique: true,
   },
   firstname: {
     type: String,
     maxlength: 20,
-    default: null,
     required: true,
   },
   lastname: {
     type: String,
     maxlength: 20,
-    default: null,
     required: true,
+  },
+  name: {
+    type: String,
   },
   phoneNumber: {
     type: String,
     maxlength: 11,
     minlength: 11,
-    default: null,
     unique: true,
   },
   imageUrl: {
     type: String,
-    default: null,
   },
   address: {
     type: String,
-    default: null,
     unique: true,
   },
   state: {
     type: String,
-    default: null,
   },
   country: {
     type: String,

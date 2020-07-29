@@ -1,17 +1,20 @@
-require('module-alias/register');
-const express = require('express');
-const { BAD_REQUEST, OK } = require('http-status-codes');
+require( 'module-alias/register' );
+const express = require( 'express' );
+const {
+  BAD_REQUEST,
+  OK
+} = require( 'http-status-codes' );
 
-const logger = require('../../shared/Logger');
+const logger = require( '../../shared/Logger' );
 const {
   userToken,
   paramMissingError,
   failedRequest,
-} = require('../../shared/constants');
-const encrypt = require('../../security/encrypt');
-const Mailer = require('../../engine/mailer');
-const Users = require('../../database/models/users');
-const generatePassword = require('../../utils/passwordGenerator');
+} = require( '../../shared/constants' );
+const encrypt = require( '../../security/encrypt' );
+const Mailer = require( '../../engine/mailer' );
+const Users = require( '../../database/models/users' );
+const generatePassword = require( '../../utils/passwordGenerator' );
 
 
 //  start
@@ -50,12 +53,18 @@ const router = express.Router();
  *           - phoneNumber
  */
 
-router.post('/auth', async (req, res) => {
+router.post( '/auth', async ( req, res ) => {
   try {
-    const { firstname, lastname, email, phoneNumber, imageUrl } = req.body;
+    const {
+      firstname,
+      lastname,
+      email,
+      phoneNumber,
+      imageUrl
+    } = req.body;
 
-    if (!firstname || !lastname || !email) {
-      return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( !firstname || !lastname || !email ) {
+      return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
     firstname.trim();
@@ -63,25 +72,22 @@ router.post('/auth', async (req, res) => {
     phoneNumber && phoneNumber.trim();
     req.body.email.toLowerCase();
 
-    let user = await Users.findOne({
+    let user = await Users.findOne( {
       email,
-    });
-    if (user) {
+    } );
+    if ( user ) {
       // log user in
       const token = await user.generateAuthToken();
-      if (!token) return res.status(BAD_REQUEST).json(failedRequest);
+      if ( !token ) return res.status( BAD_REQUEST ).json( failedRequest );
 
-      await Users.findOneAndUpdate(
-        {
-          email,
+      await Users.findOneAndUpdate( {
+        email,
+      }, {
+        $set: {
+          lastLogin: user.loginTime,
+          loginTime: Date.now(),
         },
-        {
-          $set: {
-            lastLogin: user.loginTime,
-            loginTime: Date.now(),
-          },
-        }
-      );
+      } );
 
       userToken.token = token.token;
       userToken.refresh_token = token.refresh_token;
@@ -104,31 +110,29 @@ router.post('/auth', async (req, res) => {
         'You just logged in',
         user.email,
         '🛡Login Notification',
-        (err) => {
-          logger.error(err.message, err);
+        ( err ) => {
+          logger.error( err.message, err );
         }
       );
 
-      return res.status(OK).json(userToken);
+      return res.status( OK ).json( userToken );
     } else {
-      // if (phoneNumber) {
-      //   const phone = await Users.findOne({
-      //     phoneNumber,
-      //   });
+      if ( phoneNumber ) {
+        const phone = await Users.findOne( {
+          phoneNumber,
+        } );
 
-      //   if (phone) {
-      //     return res.status(BAD_REQUEST).json(duplicateEntry);
-      //   }
-      // }
+        if ( phone ) return res.status( BAD_REQUEST ).json( duplicateEntry );
+      }
 
       // create new user account and authenticate user
-      const password = await generatePassword(8);
-      if (!password) return res.status(BAD_REQUEST).json(failedRequest);
+      const password = await generatePassword( 8 );
+      if ( !password ) return res.status( BAD_REQUEST ).json( failedRequest );
 
-      const hash = await encrypt(password);
+      const hash = await encrypt( password );
       req.body.password = hash;
 
-      user = new Users({
+      user = new Users( {
         firstname,
         lastname,
         phoneNumber,
@@ -136,24 +140,22 @@ router.post('/auth', async (req, res) => {
         imageUrl,
         password: req.body.password,
         loginTime: Date.now(),
-      });
+        name: `${firstname} ${lastname}`
+      } );
 
       const token = await user.generateAuthToken();
-      if (!token) return res.status(BAD_REQUEST).json(failedRequest);
+      if ( !token ) return res.status( BAD_REQUEST ).json( failedRequest );
 
       await user.save();
 
-      await Users.findOneAndUpdate(
-        {
-          email,
+      await Users.findOneAndUpdate( {
+        email,
+      }, {
+        $set: {
+          lastLogin: user.loginTime,
+          loginTime: Date.now(),
         },
-        {
-          $set: {
-            lastLogin: user.loginTime,
-            loginTime: Date.now(),
-          },
-        }
-      );
+      } );
 
       userToken.result = {
         firstname: user.firstname,
@@ -177,19 +179,19 @@ router.post('/auth', async (req, res) => {
         `Welcome to Artisana, Username: ${user.email} Password: ${password}`,
         user.email,
         'Welcome to Artisana 🎉',
-        (err) => {
-          logger.error(err.message, err);
+        ( err ) => {
+          logger.error( err.message, err );
         }
       );
-      return res.status(OK).send(userToken);
+      return res.status( OK ).send( userToken );
     }
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /******************************************************************************
  *                                     Export

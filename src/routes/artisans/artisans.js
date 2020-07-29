@@ -56,22 +56,21 @@ router.get( '/all', Authenticator, async ( req, res ) => {
   };
 
   const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) :
-    {};
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const users = await Artisans.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .select({
+    const users = await Artisans.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .select( {
         __v: 0,
         password: 0,
-      })
-      .populate('userId', 'firstname lastname _id')
-      .sort({
+      } )
+      .populate( 'userId', 'firstname lastname _id' )
+      .sort( {
         _id: -1,
-      });
-    const total = await Artisans.countDocuments(whereCondition);
+      } );
+    const total = await Artisans.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = users;
@@ -121,8 +120,7 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
   };
 
   const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) :
-    {};
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
     const users = await Artisans.find( whereCondition )
@@ -317,6 +315,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       NIN,
       state,
       country,
+      name: `${firstname} ${lastname}`
     } );
 
     await user.save();
