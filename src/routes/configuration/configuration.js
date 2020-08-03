@@ -37,6 +37,7 @@ router.post( '/fileUpload', Authenticator, async ( req, res ) => {
   try {
     const upload = new Uploader();
     const err = await upload.startUpload( req, res );
+    failedRequest.message = err;
     if ( err ) return res.status( BAD_REQUEST ).send( failedRequest );
 
     singleResponse.result = req.body.imageUrl;
