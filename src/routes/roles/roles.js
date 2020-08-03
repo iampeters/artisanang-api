@@ -49,7 +49,7 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/', [ Admin, Authenticator ], async ( req, res ) => {
+router.get( '/', [ Authenticator, Admin ], async ( req, res ) => {
   const pagination = {
     page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
     pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
@@ -110,7 +110,7 @@ router.get( '/', [ Admin, Authenticator ], async ( req, res ) => {
  *           - createdBy
  */
 
-router.post( '/create', [ Admin, Authenticator ], async ( req, res ) => {
+router.post( '/create', [ Authenticator, Admin ], async ( req, res ) => {
   try {
     const {
       name,
@@ -167,7 +167,7 @@ router.post( '/create', [ Admin, Authenticator ], async ( req, res ) => {
  *      required: true
  */
 
-router.get( '/:roleId', [ Admin, Authenticator ], async ( req, res ) => {
+router.get( '/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
   const {
     roleId
   } = req.params;
@@ -219,7 +219,7 @@ router.get( '/:roleId', [ Admin, Authenticator ], async ( req, res ) => {
  *           - updatedBy
  */
 
-router.put( '/update/:roleId', [ Admin, Authenticator ], async ( req, res ) => {
+router.put( '/update/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
   try {
     const {
       roleId
@@ -273,7 +273,7 @@ router.put( '/update/:roleId', [ Admin, Authenticator ], async ( req, res ) => {
  *      required: true
  */
 
-router.delete( '/delete/:roleId', [ Admin, Authenticator ], async ( req, res ) => {
+router.delete( '/delete/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
   try {
     const {
       roleId

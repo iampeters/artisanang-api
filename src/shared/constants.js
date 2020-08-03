@@ -12,6 +12,13 @@ const failedRequest = {
   message: 'Request failed.',
 };
 
+const badRequest = {
+  hasErrors: true,
+  hasResults: false,
+  successful: false,
+  message: 'Bad request.',
+};
+
 const passwordMatch = {
   hasErrors: true,
   hasResults: false,
@@ -49,9 +56,9 @@ const noResult = {
 };
 
 const emailResponse = {
-  hasErrors: true,
-  hasResults: false,
-  successful: false,
+  hasErrors: false,
+  hasResults: true,
+  successful: true,
   message: 'Email sent successfully.',
 };
 
@@ -60,6 +67,13 @@ const invalidCredentials = {
   hasResults: false,
   successful: false,
   message: 'Invalid credentials.',
+};
+
+const successful = {
+  hasErrors: false,
+  hasResults: true,
+  successful: true,
+  message: '',
 };
 
 const accountLocked = {
@@ -95,5 +109,7 @@ module.exports = {
   singleResponse,
   accountLocked,
   emailResponse,
-  accountBlocked
+  badRequest,
+  accountBlocked,
+  successful
 };

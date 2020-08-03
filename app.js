@@ -8,6 +8,7 @@ const http = require('http');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const error = require('./src/middlewares/error');
 
 const BaseRouter = require(path.resolve('src/routes'));
 const swaggerUi = require('swagger-ui-express');
@@ -32,6 +33,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', BaseRouter);
 
 app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+app.use(error);
+
 
 /**
  * Create HTTP server.

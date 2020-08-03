@@ -202,6 +202,13 @@ router.get('/:userId', Authenticator, async (req, res) => {
   try {
     const user = await Users.findOne({
       _id: userId,
+    }).select({
+      loginAttempts: 0,
+      password: 0,
+      lockUntil: 0,
+      isAdmin: 0,
+      MFA: 0,
+      isLocked: 0,
     });
     if (user) {
       singleResponse.result = user;
@@ -425,10 +432,7 @@ router.put('/update/:userId', Authenticator, async (req, res) => {
       !userId ||
       !email ||
       !phoneNumber ||
-      !address ||
-      !imageUrl ||
-      !state ||
-      !country
+      !imageUrl
     )
       return res.status(BAD_REQUEST).send(paramMissingError);
 
