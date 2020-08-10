@@ -272,7 +272,6 @@ router.post( '/create', Authenticator, async ( req, res ) => {
     address.trim();
     phoneNumber.trim();
     specialization.trim();
-    nickname && nickname.trim();
     businessName && businessName.trim();
     RCNumber && RCNumber.trim();
     NIN && NIN.trim();
