@@ -248,7 +248,6 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       imageUrl,
       address,
       specialization,
-      nickname,
       businessName,
       RCNumber,
       NIN,
@@ -307,7 +306,6 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       phoneNumber,
       email,
       imageUrl,
-      nickname,
       specialization,
       userId: req.user._id,
       businessName,
@@ -329,7 +327,6 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       address: user.address,
       imageUrl: user.imageUrl,
       specialization: user.specialization,
-      nickname: user.nickname,
       userId: user.userId,
       businessName: user.userId,
       RCNumber: user.userId,
@@ -414,8 +411,6 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
  *             specialization:
  *               type: string
  *             imageUrl:
- *               type: string
- *             nickname:
  *               type: string
  */
 
