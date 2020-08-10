@@ -45,9 +45,9 @@ const artisansSchema = new Schema( {
     type: String,
     unique: true
   },
-  nickname: {
-    type: String,
-  },
+  // nickname: {
+  //   type: String,
+  // },
   specialization: {
     type: String,
   },
