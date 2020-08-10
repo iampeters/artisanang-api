@@ -8,19 +8,16 @@ const artisansSchema = new Schema( {
   email: {
     type: String,
     required: true,
-    default: null,
     unique: true
   },
   firstname: {
     type: String,
     maxlength: 20,
-    default: null,
     required: true,
   },
   lastname: {
     type: String,
     maxlength: 20,
-    default: null,
     required: true,
   },
   name: {
@@ -43,7 +40,6 @@ const artisansSchema = new Schema( {
   },
   imageUrl: {
     type: String,
-    default: null,
   },
   address: {
     type: String,
@@ -51,11 +47,9 @@ const artisansSchema = new Schema( {
   },
   nickname: {
     type: String,
-    default: null,
   },
   specialization: {
     type: String,
-    default: null,
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -86,12 +80,10 @@ const artisansSchema = new Schema( {
   },
   updateOn: {
     type: Date,
-    default: null
   },
   updatedBy: {
     type: String,
     ref: Users,
-    default: null
   }
 } );
 
