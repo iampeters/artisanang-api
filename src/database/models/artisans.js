@@ -25,7 +25,6 @@ const artisansSchema = new Schema( {
   },
   name: {
     type: String,
-    default: null,
   },
   rating: {
     type: Number,
@@ -39,7 +38,6 @@ const artisansSchema = new Schema( {
     type: String,
     maxlength: 11,
     minlength: 11,
-    default: null,
     required: true,
     unique: true
   },
@@ -49,18 +47,15 @@ const artisansSchema = new Schema( {
   },
   address: {
     type: String,
-    default: null,
     unique: true
   },
   nickname: {
     type: String,
     default: null,
-    unique: true
   },
   specialization: {
     type: String,
     default: null,
-    unique: true
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -69,26 +64,21 @@ const artisansSchema = new Schema( {
   },
   businessName: {
     type: String,
-    default: null,
     unique: true
   },
   NIN: {
     type: String,
-    default: null,
     unique: true
   },
   RCNumber: {
     type: String,
-    default: null,
     unique: true
   },
   state: {
     type: String,
-    default: null,
   },
   country: {
     type: String,
-    default: null,
   },
   createdOn: {
     type: Date,
