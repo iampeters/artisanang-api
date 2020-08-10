@@ -36,7 +36,6 @@ const userSchema = new Schema({
   },
   address: {
     type: String,
-    unique: true,
   },
   state: {
     type: String,
