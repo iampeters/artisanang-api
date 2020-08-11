@@ -10,19 +10,19 @@ const adminSchema = new Schema( {
   email: {
     type: String,
     required: true,
-    default: null,
+
     unique: true
   },
   firstname: {
     type: String,
     maxlength: 20,
-    default: null,
+
     required: true,
   },
   lastname: {
     type: String,
     maxlength: 20,
-    default: null,
+
     required: true,
   },
   permissions: {
@@ -33,13 +33,13 @@ const adminSchema = new Schema( {
     type: String,
     maxlength: 11,
     minlength: 11,
-    default: null,
+
     required: true,
     unique: true
   },
   imageUrl: {
     type: String,
-    default: null,
+
   },
   password: {
     type: String,

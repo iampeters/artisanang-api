@@ -1,11 +1,8 @@
-require( 'module-alias/register' );
-const express = require( 'express' );
-const {
-  BAD_REQUEST,
-  OK
-} = require( 'http-status-codes' );
+require('module-alias/register');
+const express = require('express');
+const { BAD_REQUEST, OK } = require('http-status-codes');
 
-const logger = require( '../../shared/Logger' );
+const logger = require('../../shared/Logger');
 const {
   paramMissingError,
   singleResponse,
@@ -13,10 +10,10 @@ const {
   paginatedResponse,
   noResult,
   failedRequest,
-} = require( '../../shared/constants' );
+} = require('../../shared/constants');
 
-const Artisans = require( '../../database/models/artisans' );
-const Authenticator = require( '../../middlewares/auth' );
+const Artisans = require('../../database/models/artisans');
+const Authenticator = require('../../middlewares/auth');
 
 //  start
 const router = express.Router();
@@ -49,41 +46,42 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/all', Authenticator, async ( req, res ) => {
+router.get('/all', Authenticator, async (req, res) => {
   const pagination = {
-    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
-    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
+    page: req.query.page ? parseInt(req.query.page, 10) : 1,
+    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
   };
 
-  const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) : {};
+  const whereCondition = req.query.whereCondition
+    ? JSON.parse(req.query.whereCondition)
+    : {};
 
   try {
-    const users = await Artisans.find( whereCondition )
-      .skip( ( pagination.page - 1 ) * pagination.pageSize )
-      .limit( pagination.pageSize )
-      .select( {
+    const users = await Artisans.find(whereCondition)
+      .skip((pagination.page - 1) * pagination.pageSize)
+      .limit(pagination.pageSize)
+      .select({
         __v: 0,
         password: 0,
-      } )
-      .populate( 'userId', 'firstname lastname _id' )
-      .sort( {
+      })
+      .populate('userId', 'firstname lastname _id')
+      .sort({
         _id: -1,
-      } );
-    const total = await Artisans.countDocuments( whereCondition );
+      });
+    const total = await Artisans.countDocuments(whereCondition);
 
     // Paginated Response
     paginatedResponse.items = users;
     paginatedResponse.total = total;
 
-    return res.status( OK ).send( paginatedResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(paginatedResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -113,41 +111,42 @@ router.get( '/all', Authenticator, async ( req, res ) => {
  *           - whereCondition
  */
 
-router.get( '/admin/all', Authenticator, async ( req, res ) => {
+router.get('/admin/all', Authenticator, async (req, res) => {
   const pagination = {
-    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
-    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
+    page: req.query.page ? parseInt(req.query.page, 10) : 1,
+    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
   };
 
-  const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) : {};
+  const whereCondition = req.query.whereCondition
+    ? JSON.parse(req.query.whereCondition)
+    : {};
 
   try {
-    const users = await Artisans.find( whereCondition )
-      .skip( ( pagination.page - 1 ) * pagination.pageSize )
-      .limit( pagination.pageSize )
-      .select( {
+    const users = await Artisans.find(whereCondition)
+      .skip((pagination.page - 1) * pagination.pageSize)
+      .limit(pagination.pageSize)
+      .select({
         __v: 0,
         password: 0,
-      } )
-      .populate( 'userId', 'firstname lastname _id' )
-      .sort( {
+      })
+      .populate('userId', 'firstname lastname _id')
+      .sort({
         _id: -1,
-      } );
-    const total = await Artisans.countDocuments( whereCondition );
+      });
+    const total = await Artisans.countDocuments(whereCondition);
 
     // Paginated Response
     paginatedResponse.items = users;
     paginatedResponse.total = total;
 
-    return res.status( OK ).send( paginatedResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(paginatedResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -164,27 +163,25 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
  *      required: true
  */
 
-router.get( '/:artisanId', Authenticator, async ( req, res ) => {
-  const {
-    artisanId
-  } = req.params;
+router.get('/:artisanId', Authenticator, async (req, res) => {
+  const { artisanId } = req.params;
   try {
-    const user = await Artisans.findOne( {
+    const user = await Artisans.findOne({
       _id: artisanId,
-    } );
-    if ( user ) {
+    });
+    if (user) {
       singleResponse.result = user;
-      return res.status( OK ).send( singleResponse );
+      return res.status(OK).send(singleResponse);
     } else {
-      return res.status( BAD_REQUEST ).send( noResult );
+      return res.status(BAD_REQUEST).send(noResult);
     }
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -238,7 +235,7 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
  *           - userId
  */
 
-router.post( '/create', Authenticator, async ( req, res ) => {
+router.post('/create', Authenticator, async (req, res) => {
   try {
     const {
       firstname,
@@ -264,7 +261,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       !specialization ||
       !imageUrl
     ) {
-      return res.status( BAD_REQUEST ).json( paramMissingError );
+      return res.status(BAD_REQUEST).json(paramMissingError);
     }
 
     firstname.trim();
@@ -277,28 +274,42 @@ router.post( '/create', Authenticator, async ( req, res ) => {
     NIN && NIN.trim();
     req.body.email.toLowerCase();
 
-    let user = await Artisans.findOne( {
+    let user = await Artisans.findOne({
       email,
-    } );
-    if ( user ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    });
+    if (user) {
+      return res.status(BAD_REQUEST).json(duplicateEntry);
     }
 
-    const phone = await Artisans.findOne( {
+    const phone = await Artisans.findOne({
       phoneNumber,
-    } );
-    if ( phone ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    });
+    if (phone) {
+      return res.status(BAD_REQUEST).json(duplicateEntry);
     }
 
-    const Address = await Artisans.findOne( {
+    const nin = await Artisans.findOne({
+      NIN,
+    });
+    if (nin) {
+      return res.status(BAD_REQUEST).json(duplicateEntry);
+    }
+
+    const rcNumber = await Artisans.findOne({
+      RCNumber,
+    });
+    if (rcNumber) {
+      return res.status(BAD_REQUEST).json(duplicateEntry);
+    }
+
+    const Address = await Artisans.findOne({
       address,
-    } );
-    if ( Address ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    });
+    if (Address) {
+      return res.status(BAD_REQUEST).json(duplicateEntry);
     }
 
-    user = new Artisans( {
+    user = new Artisans({
       firstname,
       lastname,
       address,
@@ -312,8 +323,8 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       NIN,
       state,
       country,
-      name: `${firstname} ${lastname}`
-    } );
+      name: `${firstname} ${lastname}`,
+    });
 
     await user.save();
 
@@ -334,14 +345,14 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       country: user.country,
     };
 
-    return res.status( OK ).send( singleResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(singleResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -358,27 +369,25 @@ router.post( '/create', Authenticator, async ( req, res ) => {
  *      required: true
  */
 
-router.get( '/:artisanId', Authenticator, async ( req, res ) => {
-  const {
-    artisanId
-  } = req.params;
+router.get('/:artisanId', Authenticator, async (req, res) => {
+  const { artisanId } = req.params;
   try {
-    const user = await Artisans.findOne( {
+    const user = await Artisans.findOne({
       _id: artisanId,
-    } );
-    if ( user ) {
+    });
+    if (user) {
       singleResponse.result = user;
-      return res.status( OK ).send( singleResponse );
+      return res.status(OK).send(singleResponse);
     } else {
-      return res.status( BAD_REQUEST ).send( noResult );
+      return res.status(BAD_REQUEST).send(noResult);
     }
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -413,11 +422,9 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
  *               type: string
  */
 
-router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
+router.put('/update/:artisanId', Authenticator, async (req, res) => {
   try {
-    const {
-      artisanId
-    } = req.params;
+    const { artisanId } = req.params;
     const {
       firstname,
       lastname,
@@ -442,43 +449,47 @@ router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
       !address ||
       !specialization
     )
-      return res.status( BAD_REQUEST ).send( paramMissingError );
+      return res.status(BAD_REQUEST).send(paramMissingError);
 
-    const user = await Artisans.findOneAndUpdate( {
-      _id: userId,
-    }, {
-      $set: {
-        firstname,
-        lastname,
-        email,
-        phoneNumber,
-        imageUrl,
-        address,
-        specialization,
-        nickname,
-        updatedOn: new Date.now(),
-        updatedBy: userId,
-        businessName,
-        NIN,
-        RCNumber,
+    const user = await Artisans.findOneAndUpdate(
+      {
+        _id: userId,
       },
-    }, {
-      new: true,
-    } );
+      {
+        $set: {
+          firstname,
+          lastname,
+          email,
+          phoneNumber,
+          imageUrl,
+          address,
+          specialization,
+          nickname,
+          updatedOn: new Date.now(),
+          updatedBy: userId,
+          businessName,
+          NIN,
+          RCNumber,
+        },
+      },
+      {
+        new: true,
+      }
+    );
 
-    if ( !user ) {
-      return res.status( BAD_REQUEST ).send( failedRequest );
+    if (!user) {
+      return res.status(BAD_REQUEST).send(failedRequest);
     }
 
     singleResponse.result = user;
-    return res.status( OK ).send( singleResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(singleResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -494,28 +505,26 @@ router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
  *      required: true
  */
 
-router.delete( '/delete/:artisanId', Authenticator, async ( req, res ) => {
+router.delete('/delete/:artisanId', Authenticator, async (req, res) => {
   try {
-    const {
-      artisanId
-    } = req.params;
-    const user = await Artisans.findOneAndDelete( {
+    const { artisanId } = req.params;
+    const user = await Artisans.findOneAndDelete({
       _id: artisanId,
-    } );
+    });
 
-    if ( user ) {
+    if (user) {
       singleResponse.result = user;
-      return res.status( OK ).send( singleResponse );
+      return res.status(OK).send(singleResponse);
     } else {
-      return res.status( BAD_REQUEST ).send( singleResponse );
+      return res.status(BAD_REQUEST).send(singleResponse);
     }
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /******************************************************************************
  *                                     Export

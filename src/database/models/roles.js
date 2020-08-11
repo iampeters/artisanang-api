@@ -8,7 +8,6 @@ const rolesSchema = new Schema( {
 
   name: {
     type: String,
-    default: null,
     required: true,
   },
   permissions: {
@@ -22,16 +21,13 @@ const rolesSchema = new Schema( {
   createdBy: {
     type: String,
     ref: Users,
-    default: null
   },
   updateOn: {
     type: Date,
-    default: null
   },
   updatedBy: {
     type: String,
     ref: Users,
-    default: null
   }
 } );
 

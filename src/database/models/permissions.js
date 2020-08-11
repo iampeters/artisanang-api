@@ -37,17 +37,14 @@ const permissionsSchema = new Schema( {
   },
   updateOn: {
     type: Date,
-    default: null
   },
   updatedBy: {
     type: String,
     ref: Users,
-    default: null
   },
   createdBy: {
     type: String,
     ref: Users,
-    default: null
   }
 } );
 

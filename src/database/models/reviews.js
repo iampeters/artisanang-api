@@ -9,12 +9,10 @@ const reviewsSchema = new Schema( {
 
   title: {
     type: String,
-    default: null,
     required: true,
   },
   description: {
     type: String,
-    default: null,
     required: true,
   },
   rating: {

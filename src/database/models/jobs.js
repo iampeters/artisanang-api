@@ -9,12 +9,12 @@ const jobsSchema = new Schema( {
 
   title: {
     type: String,
-    default: null,
+
     required: true,
   },
   description: {
     type: String,
-    default: null,
+
     required: true,
   },
   artisanId: {
@@ -33,7 +33,6 @@ const jobsSchema = new Schema( {
   },
   duration: {
     type: String,
-    default: null,
     required: true
   },
   updateOn: {

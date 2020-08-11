@@ -78,7 +78,6 @@ const userSchema = new Schema({
   },
   lastLogin: {
     type: Date,
-    default: null,
   },
   createdOn: {
     type: Date,
@@ -86,11 +85,9 @@ const userSchema = new Schema({
   },
   updateOn: {
     type: Date,
-    default: null,
   },
   updatedBy: {
     type: String,
-    default: null,
   },
   isAdmin: {
     type: Boolean,
