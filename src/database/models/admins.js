@@ -120,25 +120,18 @@ adminSchema.methods.generateAuthToken = function () {
 };
 
 // encrypt password
-adminSchema.methods.encrypt = () => {
-  const encrypt = async ( password ) => {
-    if ( !password ) throw Error( 'Password is required.' );
-    const salt = await bcrypt.genSalt( 10 );
-    const hash = await bcrypt.hash( password, salt );
-    return hash;
-  };
-
-  return encrypt;
-};
-
-// decrypt password
-adminSchema.methods.decrypt = () => {
-  const decrypt = async ( password, hash ) => {
-    const result = await bcrypt.compare( password, hash );
-    return result;
-  };
-
-  return decrypt;
+adminSchema.methods.generatePasswordRecoveryToken = function () {
+  const token = jwt.sign(
+    {
+      _id: this._id,
+      type: 'password_recovery',
+    },
+    config.get('jwtPrivateKey'),
+    {
+      expiresIn: '5m',
+    }
+  );
+  return token;
 };
 
 const Admins = model( 'Admins', adminSchema, 'admins' );

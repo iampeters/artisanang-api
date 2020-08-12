@@ -379,6 +379,62 @@ router.post( '/admin/token', async ( req, res ) => {
 
 /**
  * @swagger
+ * /api/identity/admin/forgotPassword:
+ *   post:
+ *     tags:
+ *       - Identity
+ *     name: Token
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             email:
+ *               type: string
+ *               format: email
+ */
+
+router.post( '/admin/forgotPassword', async ( req, res ) => {
+  const {
+    email
+  } = req.body;
+
+  if ( !email ) return res.status( BAD_REQUEST ).send( badRequest );
+
+  try {
+    const user = await Admins.findOne( {
+      email: email,
+    } );
+    if ( user ) {
+      // send email
+      await Mailer(
+        `Hello ${
+          user.firstname
+        }, You have requested for a password change. Click the link below to complete this request. Url: http://localhost:3000/reset-password/${user.generatePasswordRecoveryToken()}`,
+        email,
+        '🛡Password Reset Request',
+        ( err ) => {
+          logger.error( err.message, err );
+        }
+      );
+
+      return res.status( OK ).send( emailResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( noResult );
+    }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+/**
+ * @swagger
  * /api/identity/forgotPassword:
  *   post:
  *     tags:
@@ -432,6 +488,7 @@ router.post( '/forgotPassword', async ( req, res ) => {
     } );
   }
 } );
+
 
 /**
  * @swagger
