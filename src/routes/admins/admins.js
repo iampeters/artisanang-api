@@ -290,10 +290,6 @@ router.post('/create', [Authenticator, AdminGuard], async (req, res) => {
  *               format: email
  *             phoneNumber:
  *               type: string
- *             password:
- *               type: string
- *             confirmPassword:
- *               type: string
  *             imageUrl:
  *               type: string
  */

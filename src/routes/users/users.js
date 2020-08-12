@@ -400,10 +400,6 @@ router.post('/create', async (req, res) => {
  *               type: string
  *             address:
  *               type: string
- *             password:
- *               type: string
- *             confirmPassword:
- *               type: string
  *             imageUrl:
  *               type: string
  *             state:
