@@ -413,7 +413,7 @@ router.post( '/admin/forgotPassword', async ( req, res ) => {
       await Mailer(
         `Hello ${
           user.firstname
-        }, You have requested for a password change. Click the link below to complete this request. Url: http://localhost:3000/reset-password/${user.generatePasswordRecoveryToken()}`,
+        }, You have requested for a password change. Click the link below to complete this request. Url: https://sandbox.artisana.ng/reset-password/${user.generatePasswordRecoveryToken()}`,
         email,
         '🛡Password Reset Request',
         ( err ) => {
@@ -469,7 +469,7 @@ router.post( '/forgotPassword', async ( req, res ) => {
       await Mailer(
         `Hello ${
           user.firstname
-        }, You have requested for a password change. Click the link below to complete this request. Url: http://localhost:3000/reset-password/${user.generatePasswordRecoveryToken()}`,
+        }, You have requested for a password change. Click the link below to complete this request. Url: https://sandbox.artisana.ng/reset-password/${user.generatePasswordRecoveryToken()}`,
         email,
         '🛡Password Reset Request',
         ( err ) => {
