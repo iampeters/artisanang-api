@@ -295,6 +295,8 @@ router.post('/create', [Authenticator, AdminGuard], async (req, res) => {
  *               type: string
  *             imageUrl:
  *               type: string
+ *             roleId:
+ *               type: string
  */
 
 router.put(
@@ -303,7 +305,7 @@ router.put(
   async (req, res) => {
     try {
       const { adminId } = req.params;
-      const { firstname, lastname, email, phoneNumber, imageUrl } = req.body;
+      const { firstname, lastname, email, phoneNumber, imageUrl, roleId } = req.body;
 
       if (
         !firstname ||
@@ -311,7 +313,8 @@ router.put(
         !adminId ||
         !email ||
         !phoneNumber ||
-        !imageUrl
+        !imageUrl || 
+        ! roleId
       )
         return res.status(BAD_REQUEST).send(paramMissingError);
 
@@ -328,6 +331,7 @@ router.put(
             email,
             phoneNumber,
             imageUrl,
+            roleId
           },
         },
         {
