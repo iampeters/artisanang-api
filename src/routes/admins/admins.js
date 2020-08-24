@@ -157,8 +157,8 @@ router.get('/:adminId', [Authenticator, AdminGuard], async (req, res) => {
  *               type: string
  *             imageUrl:
  *               type: string
- *             permissions:
- *               type: Array
+ *             roleId:
+ *               type: string
  *         required:
  *           - firstname
  *           - lastname
@@ -166,7 +166,7 @@ router.get('/:adminId', [Authenticator, AdminGuard], async (req, res) => {
  *           - phoneNumber
  *           - password
  *           - confirmPassword
- *           - permissions
+ *           - roleId
  */
 
 router.post('/create', [Authenticator, AdminGuard], async (req, res) => {
@@ -179,6 +179,7 @@ router.post('/create', [Authenticator, AdminGuard], async (req, res) => {
       phoneNumber,
       confirmPassword,
       imageUrl,
+      roleId
     } = req.body;
 
     if (
@@ -187,7 +188,8 @@ router.post('/create', [Authenticator, AdminGuard], async (req, res) => {
       !email ||
       !password ||
       !phoneNumber ||
-      !confirmPassword
+      !confirmPassword ||
+      ! roleId
     ) {
       return res.status(BAD_REQUEST).json(paramMissingError);
     }
@@ -226,6 +228,7 @@ router.post('/create', [Authenticator, AdminGuard], async (req, res) => {
       imageUrl,
       password: req.body.password,
       loginTime: Date.now(),
+      roleId
     });
 
     const token = await admin.generateAuthToken();
