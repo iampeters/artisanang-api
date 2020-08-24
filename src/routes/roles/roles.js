@@ -207,7 +207,7 @@ router.get( '/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
  *             name:
  *               type: string
  *             permissions:
- *               type: array
+ *               type: Array
  *             updatedOn:
  *               type: string
  *             updatedBy:
