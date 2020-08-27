@@ -18,6 +18,7 @@ const decrypt = require('../../security/decrypt');
 const Users = require('../../database/models/users');
 const Authenticator = require('../../middlewares/auth');
 const Mailer = require('../../engine/mailer');
+const isAdmin = require('../../middlewares/isAdmin');
 
 //  start
 const router = express.Router();
@@ -332,7 +333,7 @@ router.post('/create', async (req, res) => {
       email,
       imageUrl,
       password: req.body.password,
-      name: `${firstname} ${lastname}`
+      name: `${firstname} ${lastname}`,
     });
 
     const token = await user.generateAuthToken();
@@ -506,6 +507,159 @@ router.delete('/delete/:userId', Authenticator, async (req, res) => {
     });
   }
 });
+
+/**
+ * @swagger
+ * /api/users/unlockAccount/{userId}:
+ *  put:
+ *   tags:
+ *     - Users
+ *   parameters:
+ *    - in: path
+ *      name: userId
+ *      schema:
+ *       type: number
+ *      required: true
+ */
+
+router.put(
+  '/unlockAccount/:userId',
+  [Authenticator, isAdmin],
+  async (req, res) => {
+    try {
+      const { artisanId } = req.params;
+
+      const user = await Users.findOneAndUpdate(
+        {
+          _id: artisanId,
+        },
+        {
+          $set: {
+            isLocked: false,
+            isActive: true,
+            lockUntil: null,
+            loginAttempts: 0,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+      if (user) {
+        singleResponse.result = user;
+        return res.status(OK).send(singleResponse);
+      } else {
+        return res.status(BAD_REQUEST).send(singleResponse);
+      }
+    } catch (err) {
+      logger.error(err.message, err);
+      return res.status(BAD_REQUEST).json({
+        error: err.message,
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/users/deactivate/{userId}:
+ *  put:
+ *   tags:
+ *     - Users
+ *   parameters:
+ *    - in: path
+ *      name: userId
+ *      schema:
+ *       type: number
+ *      required: true
+ */
+
+router.put(
+  '/deactivate/:userId',
+  [Authenticator, isAdmin],
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      const user = await Users.findOneAndUpdate(
+        {
+          _id: userId,
+        },
+        {
+          $set: {
+            isActive: false,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+      if (user) {
+        singleResponse.result = user;
+        return res.status(OK).send(singleResponse);
+      } else {
+        return res.status(BAD_REQUEST).send(singleResponse);
+      }
+    } catch (err) {
+      logger.error(err.message, err);
+      return res.status(BAD_REQUEST).json({
+        error: err.message,
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/users/activate/{userId}:
+ *  put:
+ *   tags:
+ *     - Users
+ *   parameters:
+ *    - in: path
+ *      name: userId
+ *      schema:
+ *       type: number
+ *      required: true
+ */
+
+router.put(
+  '/activate/:userId',
+  [Authenticator, isAdmin],
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      const user = await Users.findOneAndUpdate(
+        {
+          _id: userId,
+        },
+        {
+          $set: {
+            isActive: false,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+      if (user) {
+        singleResponse.result = user;
+        return res.status(OK).send(singleResponse);
+      } else {
+        return res.status(BAD_REQUEST).send(singleResponse);
+      }
+    } catch (err) {
+      logger.error(err.message, err);
+      return res.status(BAD_REQUEST).json({
+        error: err.message,
+      });
+    }
+  }
+);
 
 /******************************************************************************
  *                                     Export

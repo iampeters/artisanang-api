@@ -17,6 +17,7 @@ const Artisans = require('../../database/models/artisans');
 const Authenticator = require('../../middlewares/auth');
 const encrypt = require('../../security/encrypt');
 const Mailer = require('../../engine/mailer');
+const isAdmin = require('../../middlewares/isAdmin');
 
 //  start
 const router = express.Router();
@@ -554,52 +555,156 @@ router.delete('/delete/:artisanId', Authenticator, async (req, res) => {
 /**
  * @swagger
  * /api/artisans/unlockAccount/{artisanId}:
- *  post:
+ *  put:
  *   tags:
- *     - Configuration
+ *     - Artisans
  *   parameters:
- *    - in: body
- *      name: name
+ *    - in: path
+ *      name: artisanId
  *      schema:
- *       type: file
+ *       type: number
  *      required: true
  */
 
-// router.post( '/unlockAccount/:artisanId', [ Authenticator, AdminGuard ], async ( req, res ) => {
+router.put(
+  '/unlockAccount/:artisanId',
+  [Authenticator, isAdmin],
+  async (req, res) => {
+    try {
+      const { artisanId } = req.params;
 
-//   try {
-//     const {
-//       artisanId
-//     } = req.params;
+      const user = await Artisans.findOneAndUpdate(
+        {
+          _id: artisanId,
+        },
+        {
+          $set: {
+            isLocked: false,
+            isActive: true,
+            lockUntil: null,
+            loginAttempts: 0,
+          },
+        },
+        {
+          new: true,
+        }
+      );
 
-//     const user = await Artisans.findOneAndUpdate( {
-//       _id: artisanId,
-//     }, {
-//       $set: {
-//         isLocked: false,
-//         isActive: true,
-//         lockUntil: null,
-//         loginAttempts: 0
-//       },
-//     }, {
-//       new: true,
-//     } );
+      if (user) {
+        singleResponse.result = user;
+        return res.status(OK).send(singleResponse);
+      } else {
+        return res.status(BAD_REQUEST).send(singleResponse);
+      }
+    } catch (err) {
+      logger.error(err.message, err);
+      return res.status(BAD_REQUEST).json({
+        error: err.message,
+      });
+    }
+  }
+);
 
-//     if ( user ) {
-//       singleResponse.result = user;
-//       return res.status( OK ).send( singleResponse );
-//     } else {
-//       return res.status( BAD_REQUEST ).send( singleResponse );
-//     }
+/**
+ * @swagger
+ * /api/artisans/deactivate/{artisanId}:
+ *  put:
+ *   tags:
+ *     - Artisans
+ *   parameters:
+ *    - in: path
+ *      name: artisanId
+ *      schema:
+ *       type: number
+ *      required: true
+ */
 
-//   } catch ( err ) {
-//     logger.error( err.message, err );
-//     return res.status( BAD_REQUEST ).json( {
-//       error: err.message,
-//     } );
-//   }
-// } );
+router.put(
+  '/deactivate/:artisanId',
+  [Authenticator, isAdmin],
+  async (req, res) => {
+    try {
+      const { artisanId } = req.params;
 
+      const user = await Users.findOneAndUpdate(
+        {
+          _id: artisanId,
+        },
+        {
+          $set: {
+            isActive: false,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+      if (user) {
+        singleResponse.result = user;
+        return res.status(OK).send(singleResponse);
+      } else {
+        return res.status(BAD_REQUEST).send(singleResponse);
+      }
+    } catch (err) {
+      logger.error(err.message, err);
+      return res.status(BAD_REQUEST).json({
+        error: err.message,
+      });
+    }
+  }
+);
+
+
+/**
+ * @swagger
+ * /api/artisans/activate/{artisanId}:
+ *  put:
+ *   tags:
+ *     - Artisans
+ *   parameters:
+ *    - in: path
+ *      name: artisanId
+ *      schema:
+ *       type: number
+ *      required: true
+ */
+
+router.put(
+  '/activate/:artisanId',
+  [Authenticator, isAdmin],
+  async (req, res) => {
+    try {
+      const { artisanId } = req.params;
+
+      const user = await Users.findOneAndUpdate(
+        {
+          _id: artisanId,
+        },
+        {
+          $set: {
+            isActive: true,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+      if (user) {
+        singleResponse.result = user;
+        return res.status(OK).send(singleResponse);
+      } else {
+        return res.status(BAD_REQUEST).send(singleResponse);
+      }
+    } catch (err) {
+      logger.error(err.message, err);
+      return res.status(BAD_REQUEST).json({
+        error: err.message,
+      });
+    }
+  }
+);
 /******************************************************************************
  *                                     Export
  ******************************************************************************/
