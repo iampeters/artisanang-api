@@ -10,6 +10,7 @@ const permissionRoute = require('./permissions/permissions');
 const adminRoute = require('./admins/admins');
 const socialRoute = require('./social/social');
 const rolesRoute = require('./roles/roles');
+const portfolioRoute = require('./portfolio/portfolio');
 
 router.use('/users', UserRoute);
 router.use('/artisans', ArtisansRoute);
@@ -21,5 +22,6 @@ router.use('/permissions', permissionRoute);
 router.use('/admins', adminRoute);
 router.use('/social', socialRoute);
 router.use('/roles', rolesRoute);
+router.use('/portfolios', portfolioRoute);
 
 module.exports = router;

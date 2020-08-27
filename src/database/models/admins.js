@@ -25,9 +25,8 @@ const adminSchema = new Schema( {
 
     required: true,
   },
-  permissions: {
-    type: Array,
-    default: []
+  roleId: {
+    type: Schema.Types.ObjectId,
   },
   phoneNumber: {
     type: String,

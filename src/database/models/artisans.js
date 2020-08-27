@@ -1,5 +1,6 @@
 const mongoose = require( 'mongoose' );
 const Users = require( './users' );
+const { stringify } = require( 'yamljs' );
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
@@ -43,12 +44,17 @@ const artisansSchema = new Schema( {
   },
   address: {
     type: String,
-    unique: true
   },
-  // nickname: {
-  //   type: String,
-  // },
-  specialization: {
+  category: {
+    type: String,
+  },
+  description: {
+    type: String,
+  },
+  guarantor:{
+    type: String,
+  },
+  guarantorPhoneNumber: {
     type: String,
   },
   userId: {
@@ -71,6 +77,12 @@ const artisansSchema = new Schema( {
   state: {
     type: String,
   },
+  website: {
+    type: String,
+  },
+  experience: {
+    type: Number,
+  },
   country: {
     type: String,
   },
@@ -86,6 +98,61 @@ const artisansSchema = new Schema( {
     ref: Users,
   }
 } );
+
+artisansSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign(
+    {
+      _id: this._id,
+      type: 'access_token',
+      user: 2
+    },
+    config.get('jwtPrivateKey'),
+    {
+      expiresIn: '3d',
+    }
+  );
+
+  const refresh_token = jwt.sign(
+    {
+      _id: this._id,
+      type: 'refresh_token',
+    },
+    config.get('refreshTokenPrivateKey'),
+    {
+      expiresIn: '7d',
+    }
+  );
+  return {
+    token,
+    refresh_token,
+  };
+};
+
+artisansSchema.methods.generatePasswordRecoveryToken = function () {
+  const token = jwt.sign(
+    {
+      _id: this._id,
+      type: 'password_recovery',
+    },
+    config.get('jwtPrivateKey'),
+    {
+      expiresIn: '5m',
+    }
+  );
+  return token;
+};
+
+artisansSchema.methods.generatePassword = function () {
+  const length = 8;
+  const chars =
+    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let result = '';
+
+  for (let i = length; i > 0; --i) {
+    result += chars[Math.round(Math.random() * (chars.length - 1))];
+  }
+  return result;
+};
 
 
 const Artisans = model( 'Artisans', artisansSchema, 'artisans' );

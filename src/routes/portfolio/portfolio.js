@@ -12,7 +12,7 @@ const {
   failedRequest,
 } = require('../../shared/constants');
 
-const Jobs = require('../../database/models/jobs');
+const Portfolio = require('../../database/models/portfolio');
 const Authenticator = require('../../middlewares/auth');
 const Admin = require('../../middlewares/isAdmin');
 
@@ -21,11 +21,11 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/jobs/all:
+ * /api/portfolios/all:
  *  get:
- *   summary: Get all jobs
+ *   summary: Get all portfolios
  *   tags:
- *     - Jobs
+ *     - Portfolios
  *   produces:
  *    - application/json
  *   parameters:
@@ -58,16 +58,16 @@ router.get('/all', Authenticator, async (req, res) => {
     : {};
 
   try {
-    const reviews = await Jobs.find(whereCondition)
+    const portfolio = await Portfolio.find(whereCondition)
       .skip((pagination.page - 1) * pagination.pageSize)
       .limit(pagination.pageSize)
       .sort({
         _id: -1,
       });
-    const total = await Jobs.countDocuments(whereCondition);
+    const total = await Portfolio.countDocuments(whereCondition);
 
     // Paginated Response
-    paginatedResponse.items = reviews;
+    paginatedResponse.items = portfolio;
     paginatedResponse.total = total;
 
     return res.status(OK).send(paginatedResponse);
@@ -81,11 +81,11 @@ router.get('/all', Authenticator, async (req, res) => {
 
 /**
  * @swagger
- * /api/jobs/admin/all:
+ * /api/portfolios/admin/all:
  *  get:
- *   summary: Get all jobs by admin
+ *   summary: Get all portfolios by admin
  *   tags:
- *     - Jobs
+ *     - Portfolios
  *   produces:
  *    - application/json
  *   parameters:
@@ -118,16 +118,16 @@ router.get('/admin/all', [Authenticator, Admin], async (req, res) => {
     : {};
 
   try {
-    const jobs = await Jobs.find(whereCondition)
+    const portfolio = await Portfolio.find(whereCondition)
       .skip((pagination.page - 1) * pagination.pageSize)
       .limit(pagination.pageSize)
       .sort({
         _id: -1,
       });
-    const total = await Jobs.countDocuments(whereCondition);
+    const total = await Portfolio.countDocuments(whereCondition);
 
     // Paginated Response
-    paginatedResponse.items = jobs;
+    paginatedResponse.items = portfolio;
     paginatedResponse.total = total;
 
     return res.status(OK).send(paginatedResponse);
@@ -141,10 +141,10 @@ router.get('/admin/all', [Authenticator, Admin], async (req, res) => {
 
 /**
  * @swagger
- * /api/jobs/create:
+ * /api/portfolios/create:
  *   post:
  *     tags:
- *       - Jobs
+ *       - Portfolios
  *     name: Create
  *     consumes:
  *       - application/json
@@ -158,53 +158,47 @@ router.get('/admin/all', [Authenticator, Admin], async (req, res) => {
  *               type: string
  *             description:
  *               type: string
- *             duration:
- *               type: number
  *             artisanId:
  *               type: string
- *             userId:
- *               type: string
- *             createdOn:
- *               type: string
+ *             imageUrl:
+ *               type: Array
  *         required:
  *           - title
  *           - description
- *           - duration
  *           - artisanId
- *           - userId
- *           - createdOn
+ *           - imageUrl
  */
 
 router.post('/create', async (req, res) => {
   try {
-    const { title, description, userId, artisanId, duration } = req.body;
+    const { title, description, artisanId, imageUrl } = req.body;
 
-    if (!title || !description || !userId || !artisanId || !duration) {
+    if (!title || !description || !artisanId)
       return res.status(BAD_REQUEST).json(paramMissingError);
-    }
+
+    if (imageUrl.length !== 0)
+      return res.status(BAD_REQUEST).json(paramMissingError);
 
     title.trim();
     description.trim();
-    duration.trim();
 
-    let job = await Jobs.findOne({
+    let portfolio = await Portfolio.findOne({
       title,
     });
-    if (job) {
+    if (portfolio) {
       return res.status(BAD_REQUEST).json(duplicateEntry);
     }
 
-    job = new Jobs({
+    portfolio = new Portfolio({
       title,
       description,
-      userId,
       artisanId,
-      duration,
+      imageUrl,
     });
 
-    await job.save();
+    await Portfolio.save();
 
-    singleResponse.result = job;
+    singleResponse.result = portfolio;
 
     return res.status(OK).send(singleResponse);
   } catch (err) {
@@ -217,27 +211,27 @@ router.post('/create', async (req, res) => {
 
 /**
  * @swagger
- * /api/jobs/{jobId}:
+ * /api/portfolios/{portfolioId}:
  *  get:
- *   summary: Get job details
+ *   summary: Get portfolio details
  *   tags:
- *     - Jobs
+ *     - Portfolios
  *   parameters:
  *    - in: path
- *      name: jobId
+ *      name: portfolioId
  *      schema:
  *       type: string
  *      required: true
  */
 
-router.get('/:jobId', Authenticator, async (req, res) => {
-  const { jobId } = req.params;
+router.get('/:portfolioId', Authenticator, async (req, res) => {
+  const { portfolioId } = req.params;
   try {
-    const job = await Jobs.findOne({
-      _id: jobId,
+    const portfolio = await Portfolio.findOne({
+      _id: portfolioId,
     });
-    if (job) {
-      singleResponse.result = job;
+    if (portfolio) {
+      singleResponse.result = portfolio;
       return res.status(OK).send(singleResponse);
     } else {
       return res.status(BAD_REQUEST).send(noResult);
@@ -252,10 +246,10 @@ router.get('/:jobId', Authenticator, async (req, res) => {
 
 /**
  * @swagger
- * /api/jobs/update/{jobId}:
+ * /api/portfolios/update/{portfolioId}:
  *   put:
  *     tags:
- *       - Jobs
+ *       - Portfolios
  *     name: Update
  *     consumes:
  *       - application/json
@@ -269,44 +263,43 @@ router.get('/:jobId', Authenticator, async (req, res) => {
  *               type: string
  *             description:
  *               type: string
- *             duration:
- *               type: number
+ *             imageUrl:
+ *               type: Array
  *             artisanId:
  *               type: string
- *             userId:
- *               type: string
- *             jobId:
+ *             portfolioId:
  *               type: string
  *         required:
  *           - title
  *           - description
- *           - duration
+ *           - imageUrl
  *           - artisanId
- *           - userId
- *           - jobId
+ *           - portfolioId
  */
 
-router.put('/update/:jobId', Authenticator, async (req, res) => {
+router.put('/update/:portfolioId', Authenticator, async (req, res) => {
   try {
-    const { jobId } = req.params;
-    const { title, description, userId, artisanId, duration } = req.body;
+    const { portfolioId } = req.params;
+    const { title, description, artisanId, imageUrl } = req.body;
 
-    if (!title || !description || !duration || !artisanId)
+    if (!title || !description || !artisanId)
       return res.status(BAD_REQUEST).send(paramMissingError);
 
-    const job = await Jobs.findOneAndUpdate(
+    if (imageUrl.length !== 0)
+      return res.status(BAD_REQUEST).json(paramMissingError);
+
+    const portfolio = await Portfolio.findOneAndUpdate(
       {
-        _id: jobId,
+        _id: portfolioId,
       },
       {
         $set: {
           title,
           description,
-          userId,
           artisanId,
-          duration,
+          imageUrl,
           updatedOn: Date.now(),
-          updatedBy: userId,
+          updatedBy: artisanId,
         },
       },
       {
@@ -314,11 +307,11 @@ router.put('/update/:jobId', Authenticator, async (req, res) => {
       }
     ).populate('artisanId', 'firstname lastname email phone');
 
-    if (!job) {
+    if (!portfolio) {
       return res.status(BAD_REQUEST).send(failedRequest);
     }
 
-    singleResponse.result = job;
+    singleResponse.result = portfolio;
     return res.status(OK).send(singleResponse);
   } catch (err) {
     logger.error(err.message, err);
@@ -330,27 +323,28 @@ router.put('/update/:jobId', Authenticator, async (req, res) => {
 
 /**
  * @swagger
- * /api/jobs/delete/{jobId}:
+ * /api/portfolios/delete/{portfolioId}:
  *  delete:
  *   tags:
- *     - Jobs
+ *     - Portfolios
  *   parameters:
  *    - in: path
- *      name: jobId
+ *      name: portfolioId
  *      schema:
  *       type: number
  *      required: true
  */
 
-router.delete('/delete/:jobId', Authenticator, async (req, res) => {
+router.delete('/delete/:portfolioId', Authenticator, async (req, res) => {
   try {
-    const { jobId } = req.params;
-    const job = await Jobs.findOneAndDelete({
-      _id: jobId,
+    const { portfolioId } = req.params;
+    const portfolio = await Portfolio.findOneAndDelete({
+      _id: portfolioId,
+      artisanId: req.user._id
     });
 
-    if (job) {
-      singleResponse.result = job;
+    if (portfolio) {
+      singleResponse.result = portfolio;
       return res.status(OK).send(singleResponse);
     } else {
       return res.status(BAD_REQUEST).send(singleResponse);
