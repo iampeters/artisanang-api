@@ -209,7 +209,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
     //   return res.status( BAD_REQUEST ).json( duplicateEntry );
     // }
 
-    review = new Reviews( {
+    const review = new Reviews( {
       title,
       description,
       userId,
@@ -255,9 +255,9 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       if ( review.rating == 4 ) reviewType.four += 1;
       if ( review.rating == 4.5 ) reviewType.fourPoint5 += 1;
       if ( review.rating == 5 ) reviewType.five += 1;
-    } )
+    } );
 
-    function calcRating() {
+    const calcRating = () => {
       let totalAverage = 0;
       let i = 1;
       for ( const x in reviewType ) {
@@ -267,8 +267,8 @@ router.post( '/create', Authenticator, async ( req, res ) => {
           i++;
         }
       }
-      return Math.round( totalAverage / totalReviews )
-    }
+      return Math.round( totalAverage / totalReviews );
+    };
 
     calculatedRating = calcRating();
 
@@ -285,7 +285,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
 
     if ( !user ) return res.status( FAILED_DEPENDENCY ).send( failedRequest );
 
-    singleResponse.result = review
+    singleResponse.result = review;
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );

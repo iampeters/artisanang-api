@@ -24,7 +24,7 @@ const requestSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['NEW', 'ACCEPTED', 'DECLINED', 'CANCELED'],
+    enum: ['NEW', 'ASSIGNED', 'DECLINED', 'CANCELED'],
     default: 'NEW'
   },
   createdOn: {

@@ -1,23 +1,21 @@
-require('module-alias/register');
-const express = require('express');
-const { BAD_REQUEST, OK, FAILED_DEPENDENCY } = require('http-status-codes');
+require( 'module-alias/register' );
+const express = require( 'express' );
+const {
+  BAD_REQUEST,
+  OK
+} = require( 'http-status-codes' );
 
-const logger = require('../../shared/Logger');
+const logger = require( '../../shared/Logger' );
 const {
   paramMissingError,
   singleResponse,
   paginatedResponse,
-  noResult,
-  failedRequest,
-} = require('../../shared/constants');
+} = require( '../../shared/constants' );
 
-const Requests = require('../../database/models/request');
-const Artisans = require('../../database/models/artisans');
-const Jobs = require('../../database/models/jobs');
-const Authenticator = require('../../middlewares/auth');
-const isAdmin = require('../../middlewares/isAdmin');
-const Mailer = require('../../engine/mailer');
-const { request } = require('express');
+const Requests = require( '../../database/models/request' );
+const Authenticator = require( '../../middlewares/auth' );
+const isAdmin = require( '../../middlewares/isAdmin' );
+const Mailer = require( '../../engine/mailer' );
 
 //  start
 const router = express.Router();
@@ -50,40 +48,39 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get('/all', Authenticator, async (req, res) => {
+router.get( '/all', Authenticator, async ( req, res ) => {
   const pagination = {
-    page: req.query.page ? parseInt(req.query.page, 10) : 1,
-    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition
-    ? JSON.parse(req.query.whereCondition)
-    : {};
+  const whereCondition = req.query.whereCondition ?
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const requests = await Requests.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .sort({
+    const requests = await Requests.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .sort( {
         _id: -1,
-      })
-      .populate('userId', 'firstname lastname _id imageUrl')
-      .populate('jobId', 'title description _id')
-      .populate('artisanId', 'firstname lastname _id imageUrl');
-    const total = await Requests.countDocuments(whereCondition);
+      } )
+      .populate( 'userId', 'firstname lastname _id imageUrl' )
+      .populate( 'jobId', 'title description _id' )
+      .populate( 'artisanId', 'firstname lastname _id imageUrl' );
+    const total = await Requests.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = requests;
     paginatedResponse.total = total;
 
-    return res.status(OK).send(paginatedResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -113,41 +110,40 @@ router.get('/all', Authenticator, async (req, res) => {
  *           - whereCondition
  */
 
-router.get('/admin/all', [Authenticator, isAdmin], async (req, res) => {
+router.get( '/admin/all', [ Authenticator, isAdmin ], async ( req, res ) => {
   const pagination = {
-    page: req.query.page ? parseInt(req.query.page, 10) : 1,
-    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition
-    ? JSON.parse(req.query.whereCondition)
-    : {};
+  const whereCondition = req.query.whereCondition ?
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const requests = await Requests.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .sort({
+    const requests = await Requests.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .sort( {
         _id: -1,
-      })
-      .populate('userId', 'firstname lastname _id imageUrl')
-      .populate('jobId', 'title description _id')
-      .populate('artisanId', 'firstname lastname _id imageUrl')
-      .populate('updatedBy', 'firstname lastname _id imageUrl');
-    const total = await Requests.countDocuments(whereCondition);
+      } )
+      .populate( 'userId', 'firstname lastname _id imageUrl' )
+      .populate( 'jobId', 'title description _id' )
+      .populate( 'artisanId', 'firstname lastname _id imageUrl' )
+      .populate( 'updatedBy', 'firstname lastname _id imageUrl' );
+    const total = await Requests.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = requests;
     paginatedResponse.total = total;
 
-    return res.status(OK).send(paginatedResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -176,20 +172,24 @@ router.get('/admin/all', [Authenticator, isAdmin], async (req, res) => {
  *           - userId
  */
 
-router.post('/create', async (req, res) => {
+router.post( '/create', async ( req, res ) => {
   try {
-    const { jobId, artisanId, userId } = req.body;
-
-    if (!jobId || !userId || !artisanId)
-      return res.status(BAD_REQUEST).json(paramMissingError);
-
-    request = new Requests({
+    const {
       jobId,
-      userId,
       artisanId,
-    })
-      .populate('artisanId', 'email')
-      .populate('jobId', 'title description');
+      userId
+    } = req.body;
+
+    if ( !jobId || !userId || !artisanId )
+      return res.status( BAD_REQUEST ).json( paramMissingError );
+
+    const request = new Requests( {
+        jobId,
+        userId,
+        artisanId,
+      } )
+      .populate( 'artisanId', 'email' )
+      .populate( 'jobId', 'title description' );
 
     await request.save();
 
@@ -198,21 +198,21 @@ router.post('/create', async (req, res) => {
       'You have a new job request',
       request.artisanId.email,
       'New Job Request 🎉',
-      (err) => {
-        logger.error(err.message, err);
+      ( err ) => {
+        logger.error( err.message, err );
       }
     );
 
     singleResponse.result = request;
 
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -229,30 +229,28 @@ router.post('/create', async (req, res) => {
  *      required: true
  */
 
-router.put('/accept/:requestId', async (req, res) => {
+router.put( '/accept/:requestId', async ( req, res ) => {
   try {
-    const { requestId } = req.params;
+    const {
+      requestId
+    } = req.params;
 
-    if (!requestId) return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( !requestId ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const request = Requests.findOneAndUpdate(
-      {
+    const request = Requests.findOneAndUpdate( {
         _id: requestId,
-      },
-      {
+      }, {
         $set: {
-          status: 'ACCEPTED',
+          status: 'ASSIGNED',
           updatedOn: Date.now(),
           updatedBy: req.user._id,
         },
-      },
-      {
+      }, {
         new: true,
-      }
-    )
-      .populate('artisanId', 'email')
-      .populate('userId', 'title description')
-      .populate('jobId', 'title description');
+      } )
+      .populate( 'artisanId', 'email' )
+      .populate( 'userId', 'title description' )
+      .populate( 'jobId', 'title description' );
 
     await request.save();
 
@@ -261,21 +259,21 @@ router.put('/accept/:requestId', async (req, res) => {
       'Your job request has been accepted',
       request.userId.email,
       'Job Request Accepted 🎉',
-      (err) => {
-        logger.error(err.message, err);
+      ( err ) => {
+        logger.error( err.message, err );
       }
     );
 
     singleResponse.result = request;
 
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -292,30 +290,28 @@ router.put('/accept/:requestId', async (req, res) => {
  *      required: true
  */
 
-router.put('/reject/:requestId', async (req, res) => {
+router.put( '/reject/:requestId', async ( req, res ) => {
   try {
-    const { requestId } = req.params;
+    const {
+      requestId
+    } = req.params;
 
-    if (!requestId) return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( !requestId ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const request = Requests.findOneAndUpdate(
-      {
+    const request = Requests.findOneAndUpdate( {
         _id: requestId,
-      },
-      {
+      }, {
         $set: {
           status: 'DECLINED',
           updatedOn: Date.now(),
           updatedBy: req.user._id,
         },
-      },
-      {
+      }, {
         new: true,
-      }
-    )
-      .populate('artisanId', 'email')
-      .populate('userId', 'title description')
-      .populate('jobId', 'title description');
+      } )
+      .populate( 'artisanId', 'email' )
+      .populate( 'userId', 'title description' )
+      .populate( 'jobId', 'title description' );
 
     await request.save();
 
@@ -324,21 +320,21 @@ router.put('/reject/:requestId', async (req, res) => {
       'Your job request has been declined',
       request.userId.email,
       'Job Request Declined 🎉',
-      (err) => {
-        logger.error(err.message, err);
+      ( err ) => {
+        logger.error( err.message, err );
       }
     );
 
     singleResponse.result = request;
 
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -355,30 +351,28 @@ router.put('/reject/:requestId', async (req, res) => {
  *      required: true
  */
 
-router.put('/cancel/:requestId', async (req, res) => {
+router.put( '/cancel/:requestId', async ( req, res ) => {
   try {
-    const { requestId } = req.params;
+    const {
+      requestId
+    } = req.params;
 
-    if (!requestId) return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( !requestId ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const request = Requests.findOneAndUpdate(
-      {
+    const request = Requests.findOneAndUpdate( {
         _id: requestId,
-      },
-      {
+      }, {
         $set: {
           status: 'CANCELED',
           updatedOn: Date.now(),
           updatedBy: req.user._id,
         },
-      },
-      {
+      }, {
         new: true,
-      }
-    )
-      .populate('artisanId', 'email')
-      .populate('userId', 'title description')
-      .populate('jobId', 'title description');
+      } )
+      .populate( 'artisanId', 'email' )
+      .populate( 'userId', 'title description' )
+      .populate( 'jobId', 'title description' );
 
     await request.save();
 
@@ -387,21 +381,21 @@ router.put('/cancel/:requestId', async (req, res) => {
       'Your job request has been canceled',
       request.userId.email,
       'Job Request Canceled 🎉',
-      (err) => {
-        logger.error(err.message, err);
+      ( err ) => {
+        logger.error( err.message, err );
       }
     );
 
     singleResponse.result = request;
 
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 
 
