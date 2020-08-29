@@ -15,19 +15,19 @@ const {
   failedRequest,
 } = require( '../../shared/constants' );
 
-const Roles = require( '../../database/models/roles' );
+const Category = require( '../../database/models/category' );
 const Authenticator = require( '../../middlewares/auth' );
-const Admin = require( '../../middlewares/isAdmin' );
+const isAdmin = require( '../../middlewares/isAdmin' );
 
 //  start
 const router = express.Router();
 
 /**
  * @swagger
- * /api/roles:
+ * /api/category:
  *  get:
  *   tags:
- *     - Roles
+ *     - Category
  *   produces:
  *    - application/json
  *   parameters:
@@ -49,7 +49,7 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/', [ Authenticator, Admin ], async ( req, res ) => {
+router.get( '/', [ Authenticator, isAdmin ], async ( req, res ) => {
   const pagination = {
     page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
     pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
@@ -59,16 +59,16 @@ router.get( '/', [ Authenticator, Admin ], async ( req, res ) => {
     JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const roles = await Roles.find( whereCondition )
+    const category = await Category.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .sort( {
         _id: -1
       } );
-    const total = await Roles.countDocuments( whereCondition );
+    const total = await Category.countDocuments( whereCondition );
 
     // Paginated Response
-    paginatedResponse.items = roles;
+    paginatedResponse.items = category;
     paginatedResponse.total = total;
 
     return res.status( OK ).send( paginatedResponse );
@@ -82,10 +82,10 @@ router.get( '/', [ Authenticator, Admin ], async ( req, res ) => {
 
 /**
  * @swagger
- * /api/roles/create:
+ * /api/category/create:
  *   post:
  *     tags:
- *       - Roles
+ *       - Category
  *     name: Create
  *     consumes:
  *       - application/json
@@ -97,52 +97,46 @@ router.get( '/', [ Authenticator, Admin ], async ( req, res ) => {
  *           properties:
  *             name:
  *               type: string
- *             permissions:
- *               type: Array
- *             createdOn:
- *               type: string
- *             createdBy:
+ *             imageUrl:
  *               type: string
  *         required:
  *           - name
- *           - permissions
- *           - createdOn
- *           - createdBy
+ *           - imageUrl
  */
 
-router.post( '/create', [ Authenticator, Admin ], async ( req, res ) => {
+router.post( '/create', [ Authenticator, isAdmin ], async ( req, res ) => {
   try {
     const {
       name,
-      permissions,
+      imageUrl,
     } = req.body;
 
     if (
       !name ||
-      !permissions
+      !imageUrl
     ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
     name.trim();
 
-    let role = await Roles.findOne( {
+    let category = await Category.findOne( {
       name
     } );
-    if ( role ) {
+    if ( category ) {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    role = new Roles( {
+    category = new Category( {
       name,
-      permissions,
+      imageUrl,
       createdOn: Date.now(),
       createdBy: req.user._id
     } );
 
-    await role.save();
+    await category.save();
 
-    singleResponse.result = role;
+    singleResponse.result = category;
 
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
@@ -155,28 +149,28 @@ router.post( '/create', [ Authenticator, Admin ], async ( req, res ) => {
 
 /**
  * @swagger
- * /api/roles/{roleId}:
+ * /api/category/{categoryId}:
  *  get:
  *   tags:
- *     - Roles
+ *     - Category
  *   parameters:
  *    - in: path
- *      name: roleId
+ *      name: categoryId
  *      schema:
  *       type: string
  *      required: true
  */
 
-router.get( '/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
+router.get( '/:categoryId', [ Authenticator, isAdmin ], async ( req, res ) => {
   const {
-    roleId
+    categoryId
   } = req.params;
   try {
-    const role = await Roles.findOne( {
-      _id: roleId
+    const category = await Category.findOne( {
+      _id: categoryId
     } );
-    if ( role ) {
-      singleResponse.result = role;
+    if ( category ) {
+      singleResponse.result = category;
       return res.status( OK ).send( singleResponse );
     } else {
       return res.status( BAD_REQUEST ).send( noResult );
@@ -191,10 +185,10 @@ router.get( '/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
 
 /**
  * @swagger
- * /api/roles/update/{roleId}:
+ * /api/category/update/{categoryId}:
  *   put:
  *     tags:
- *       - Roles
+ *       - Category
  *     name: Update
  *     consumes:
  *       - application/json
@@ -206,34 +200,28 @@ router.get( '/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
  *           properties:
  *             name:
  *               type: string
- *             permissions:
- *               type: Array
- *             updatedOn:
- *               type: string
- *             updatedBy:
+ *             imageUrl:
  *               type: string
  *         required:
  *           - name
- *           - permissions
- *           - updatedOn
- *           - updatedBy
+ *           - imageUrl
  */
 
-router.put( '/update/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
+router.put( '/update/:categoryId', [ Authenticator, isAdmin ], async ( req, res ) => {
   try {
     const {
-      roleId
+      categoryId
     } = req.params;
     const {
       name,
-      permissions,
+      imageUrl,
     } = req.body;
 
-    if ( !name || !permissions )
+    if ( !name || !imageUrl )
       return res.status( BAD_REQUEST ).send( paramMissingError );
 
-    const role = await Roles.findOneAndUpdate( {
-      _id: roleId
+    const category = await Category.findOneAndUpdate( {
+      _id: categoryId
     }, {
       $set: {
         name,
@@ -245,11 +233,11 @@ router.put( '/update/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
       new: true,
     } );
 
-    if ( !role ) {
+    if ( !category ) {
       return res.status( BAD_REQUEST ).send( failedRequest );
     }
 
-    singleResponse.result = role;
+    singleResponse.result = category;
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );
@@ -261,29 +249,30 @@ router.put( '/update/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
 
 /**
  * @swagger
- * /api/roles/delete/{roleId}:
+ * /api/category/delete/{categoryId}:
  *  delete:
  *   tags:
- *     - Roles
+ *     - Category
  *   parameters:
  *    - in: path
- *      name: roleId
+ *      name: categoryId
  *      schema:
  *       type: number
  *      required: true
  */
 
-router.delete( '/delete/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
+
+router.delete( '/delete/:categoryId', [ Authenticator, isAdmin ], async ( req, res ) => {
   try {
     const {
-      roleId
+      categoryId
     } = req.params;
-    const role = await Roles.findOneAndDelete( {
-      _id: roleId
+    const category = await Category.findOneAndDelete( {
+      _id: categoryId
     } );
 
-    if ( role ) {
-      singleResponse.result = role;
+    if ( category ) {
+      singleResponse.result = category;
       return res.status( OK ).send( singleResponse );
     } else {
       return res.status( BAD_REQUEST ).send( singleResponse );
@@ -295,6 +284,7 @@ router.delete( '/delete/:roleId', [ Authenticator, Admin ], async ( req, res ) =
     } );
   }
 } );
+
 
 /******************************************************************************
  *                                     Export

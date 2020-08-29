@@ -11,6 +11,8 @@ const adminRoute = require('./admins/admins');
 const socialRoute = require('./social/social');
 const rolesRoute = require('./roles/roles');
 const portfolioRoute = require('./portfolio/portfolio');
+const requestRoute = require('./requests/requests');
+const categoryRoute = require('./category/category');
 
 router.use('/users', UserRoute);
 router.use('/artisans', ArtisansRoute);
@@ -23,5 +25,7 @@ router.use('/admins', adminRoute);
 router.use('/social', socialRoute);
 router.use('/roles', rolesRoute);
 router.use('/portfolios', portfolioRoute);
+router.use('/requests', requestRoute);
+router.use('/category', categoryRoute);
 
 module.exports = router;
