@@ -1,6 +1,7 @@
 const mongoose = require( 'mongoose' );
 const config = require( 'config' );
 const jwt = require( 'jsonwebtoken' );
+const Category = require( './category' );
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
@@ -112,8 +113,9 @@ const userSchema = new Schema( {
   updatedBy: {
     type: String,
   },
-  category: {
-    type: String,
+  categoryId: {
+    type: Schema.Types.ObjectId,
+    ref: Category
   },
   description: {
     type: String,

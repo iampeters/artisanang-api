@@ -49,7 +49,7 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/', [ Authenticator, isAdmin ], async ( req, res ) => {
+router.get( '/', Authenticator, async ( req, res ) => {
   const pagination = {
     page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
     pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
@@ -58,12 +58,14 @@ router.get( '/', [ Authenticator, isAdmin ], async ( req, res ) => {
   const whereCondition = req.query.whereCondition ?
     JSON.parse( req.query.whereCondition ) : {};
 
+  whereCondition.isActive = true;
+
   try {
     const category = await Category.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .sort( {
-        _id: -1
+        name: 1
       } );
     const total = await Category.countDocuments( whereCondition );
 
@@ -79,6 +81,65 @@ router.get( '/', [ Authenticator, isAdmin ], async ( req, res ) => {
     } );
   }
 } );
+
+/**
+ * @swagger
+ * /api/category/admin:
+ *  get:
+ *   tags:
+ *     - Category
+ *   produces:
+ *    - application/json
+ *   parameters:
+ *       - name: page
+ *         in: query
+ *         schema:
+ *           type: integer
+ *       - name: pageSize
+ *         in: query
+ *         schema:
+ *            type: integer
+ *       - name: whereCondition
+ *         in: query
+ *         schema:
+ *            type: object
+ *         required:
+ *           - page
+ *           - pageSize
+ *           - whereCondition
+ */
+
+router.get( '/admin', [ Authenticator, isAdmin ], async ( req, res ) => {
+  const pagination = {
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
+  };
+
+  const whereCondition = req.query.whereCondition ?
+    JSON.parse( req.query.whereCondition ) : {};
+
+  try {
+    const category = await Category.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .sort( {
+        name: 1
+      } );
+    const total = await Category.countDocuments( whereCondition );
+
+    // Paginated Response
+    paginatedResponse.items = category;
+    paginatedResponse.total = total;
+
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
 
 /**
  * @swagger
@@ -269,6 +330,90 @@ router.delete( '/delete/:categoryId', [ Authenticator, isAdmin ], async ( req, r
     } = req.params;
     const category = await Category.findOneAndDelete( {
       _id: categoryId
+    } );
+
+    if ( category ) {
+      singleResponse.result = category;
+      return res.status( OK ).send( singleResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( singleResponse );
+    }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+/**
+ * @swagger
+ * /api/category/deactivate/{categoryId}:
+ *  put:
+ *   tags:
+ *     - Category
+ *   parameters:
+ *    - in: path
+ *      name: categoryId
+ *      schema:
+ *       type: number
+ *      required: true
+ */
+
+
+router.put( '/deactivate/:categoryId', [ Authenticator, isAdmin ], async ( req, res ) => {
+  try {
+    const {
+      categoryId
+    } = req.params;
+    const category = await Category.findOneAndUpdate( {
+      _id: categoryId
+    }, {
+      $set: {
+        isActive: false
+      }
+    } );
+
+    if ( category ) {
+      singleResponse.result = category;
+      return res.status( OK ).send( singleResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( singleResponse );
+    }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+/**
+ * @swagger
+ * /api/category/activate/{categoryId}:
+ *  put:
+ *   tags:
+ *     - Category
+ *   parameters:
+ *    - in: path
+ *      name: categoryId
+ *      schema:
+ *       type: number
+ *      required: true
+ */
+
+
+router.put( '/activate/:categoryId', [ Authenticator, isAdmin ], async ( req, res ) => {
+  try {
+    const {
+      categoryId
+    } = req.params;
+    const category = await Category.findOneAndUpdate( {
+      _id: categoryId
+    }, {
+      $set: {
+        isActive: true
+      }
     } );
 
     if ( category ) {

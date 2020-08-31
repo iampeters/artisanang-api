@@ -17,6 +17,10 @@ const categorySchema = new Schema( {
     type: Date,
     default: Date.now
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
   createdBy: {
     type: String,
     ref: Admins,
@@ -31,5 +35,5 @@ const categorySchema = new Schema( {
 } );
 
 
-const Categories = model( 'Categories', categorySchema, 'categories' );
-module.exports = Categories;
+const Category = model( 'Category', categorySchema, 'category' );
+module.exports = Category;
