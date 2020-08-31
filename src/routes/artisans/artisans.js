@@ -291,6 +291,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       name: `${firstname} ${lastname}`,
       password: req.body.password,
       verificationCode: code,
+      userType: 2,
       createdBy
     } );
 
@@ -314,6 +315,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       NIN: user.userId,
       state: user.state,
       country: user.country,
+      userType: user.userType,
     };
 
     // TODO - send onboard email to artisan

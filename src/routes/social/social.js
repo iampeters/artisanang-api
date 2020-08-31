@@ -60,10 +60,11 @@ router.post( '/auth', async ( req, res ) => {
       lastname,
       email,
       phoneNumber,
-      imageUrl
+      imageUrl,
+      userType
     } = req.body;
 
-    if ( !firstname || !lastname || !email ) {
+    if ( !firstname || !lastname || !email|| !userType ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
@@ -102,6 +103,7 @@ router.post( '/auth', async ( req, res ) => {
         phoneNumber: user.phoneNumber,
         address: user.address,
         imageUrl: user.imageUrl,
+        userType: user.userType,
       };
 
       // send email to user
@@ -140,7 +142,8 @@ router.post( '/auth', async ( req, res ) => {
         password: req.body.password,
         loginTime: Date.now(),
         name: `${firstname} ${lastname}`,
-        isEmailVerified: true
+        isEmailVerified: true,
+        userType
       } );
 
       const token = await user.generateAuthToken();
@@ -168,6 +171,7 @@ router.post( '/auth', async ( req, res ) => {
         state: user.state,
         country: user.country,
         lastLogin: user.lastLogin,
+        userType: user.userType,
       };
       userToken.token = token.token;
       userToken.refresh_token = token.refresh_token;

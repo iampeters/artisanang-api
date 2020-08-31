@@ -287,6 +287,7 @@ router.post( '/create', async ( req, res ) => {
       password,
       phoneNumber,
       imageUrl,
+      userType
     } = req.body;
 
     if ( !firstname || !lastname || !email || !password ) {
@@ -340,7 +341,8 @@ router.post( '/create', async ( req, res ) => {
       imageUrl,
       password: req.body.password,
       name: `${firstname} ${lastname}`,
-      verificationCode: code
+      verificationCode: code,
+      userType
     } );
 
     const token = await user.generateAuthToken();
@@ -356,6 +358,7 @@ router.post( '/create', async ( req, res ) => {
       phoneNumber: user.phoneNumber,
       address: user.address,
       imageUrl: user.imageUrl,
+      userType: user.userType,
     };
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
