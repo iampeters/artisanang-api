@@ -1,5 +1,5 @@
 const mongoose = require( 'mongoose' );
-const Artisans = require( './artisans' );
+const Users = require( './users' );
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
@@ -16,7 +16,7 @@ const portfolioSchema = new Schema( {
   },
   artisanId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: Artisans,
+    ref: Users,
     required: true
   },
   createdOn: {
@@ -36,7 +36,7 @@ const portfolioSchema = new Schema( {
   },
   updatedBy: {
     type: String,
-    ref: Artisans,
+    ref: Users,
   }
 } );
 

@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Users = require('./users');
 const Jobs = require('./jobs');
-const Artisans = require('./artisans');
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
@@ -14,7 +13,7 @@ const requestSchema = new Schema({
   },
   artisanId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: Artisans,
+    ref: Users,
     required: true,
   },
   userId: {

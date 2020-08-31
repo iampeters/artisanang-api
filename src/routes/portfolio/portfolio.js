@@ -1,8 +1,11 @@
-require('module-alias/register');
-const express = require('express');
-const { BAD_REQUEST, OK } = require('http-status-codes');
+require( 'module-alias/register' );
+const express = require( 'express' );
+const {
+  BAD_REQUEST,
+  OK
+} = require( 'http-status-codes' );
 
-const logger = require('../../shared/Logger');
+const logger = require( '../../shared/Logger' );
 const {
   paramMissingError,
   singleResponse,
@@ -10,11 +13,11 @@ const {
   paginatedResponse,
   noResult,
   failedRequest,
-} = require('../../shared/constants');
+} = require( '../../shared/constants' );
 
-const Portfolio = require('../../database/models/portfolio');
-const Authenticator = require('../../middlewares/auth');
-const Admin = require('../../middlewares/isAdmin');
+const Portfolio = require( '../../database/models/portfolio' );
+const Authenticator = require( '../../middlewares/auth' );
+const Admin = require( '../../middlewares/isAdmin' );
 
 //  start
 const router = express.Router();
@@ -47,37 +50,37 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get('/all', Authenticator, async (req, res) => {
+router.get( '/all', Authenticator, async ( req, res ) => {
   const pagination = {
-    page: req.query.page ? parseInt(req.query.page, 10) : 1,
-    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition
-    ? JSON.parse(req.query.whereCondition)
-    : {};
+  const whereCondition = req.query.whereCondition ?
+    JSON.parse( req.query.whereCondition ) :
+    {};
 
   try {
-    const portfolio = await Portfolio.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .sort({
+    const portfolio = await Portfolio.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .sort( {
         _id: -1,
-      });
-    const total = await Portfolio.countDocuments(whereCondition);
+      } );
+    const total = await Portfolio.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = portfolio;
     paginatedResponse.total = total;
 
-    return res.status(OK).send(paginatedResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -107,37 +110,37 @@ router.get('/all', Authenticator, async (req, res) => {
  *           - whereCondition
  */
 
-router.get('/admin/all', [Authenticator, Admin], async (req, res) => {
+router.get( '/admin/all', [ Authenticator, Admin ], async ( req, res ) => {
   const pagination = {
-    page: req.query.page ? parseInt(req.query.page, 10) : 1,
-    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition
-    ? JSON.parse(req.query.whereCondition)
-    : {};
+  const whereCondition = req.query.whereCondition ?
+    JSON.parse( req.query.whereCondition ) :
+    {};
 
   try {
-    const portfolio = await Portfolio.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .sort({
+    const portfolio = await Portfolio.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .sort( {
         _id: -1,
-      });
-    const total = await Portfolio.countDocuments(whereCondition);
+      } );
+    const total = await Portfolio.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = portfolio;
     paginatedResponse.total = total;
 
-    return res.status(OK).send(paginatedResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -169,45 +172,50 @@ router.get('/admin/all', [Authenticator, Admin], async (req, res) => {
  *           - imageUrl
  */
 
-router.post('/create', async (req, res) => {
+router.post( '/create', async ( req, res ) => {
   try {
-    const { title, description, artisanId, imageUrl } = req.body;
+    const {
+      title,
+      description,
+      artisanId,
+      imageUrl
+    } = req.body;
 
-    if (!title || !description || !artisanId)
-      return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( !title || !description || !artisanId )
+      return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    if (imageUrl.length !== 0)
-      return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( imageUrl.length !== 0 )
+      return res.status( BAD_REQUEST ).json( paramMissingError );
 
     title.trim();
     description.trim();
 
-    let portfolio = await Portfolio.findOne({
+    let portfolio = await Portfolio.findOne( {
       title,
-    });
-    if (portfolio) {
-      return res.status(BAD_REQUEST).json(duplicateEntry);
+    } );
+    if ( portfolio ) {
+      return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    portfolio = new Portfolio({
+    portfolio = new Portfolio( {
       title,
       description,
       artisanId,
       imageUrl,
-    });
+    } );
 
     await Portfolio.save();
 
     singleResponse.result = portfolio;
 
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -224,25 +232,27 @@ router.post('/create', async (req, res) => {
  *      required: true
  */
 
-router.get('/:portfolioId', Authenticator, async (req, res) => {
-  const { portfolioId } = req.params;
+router.get( '/:portfolioId', Authenticator, async ( req, res ) => {
+  const {
+    portfolioId
+  } = req.params;
   try {
-    const portfolio = await Portfolio.findOne({
+    const portfolio = await Portfolio.findOne( {
       _id: portfolioId,
-    });
-    if (portfolio) {
+    } );
+    if ( portfolio ) {
       singleResponse.result = portfolio;
-      return res.status(OK).send(singleResponse);
+      return res.status( OK ).send( singleResponse );
     } else {
-      return res.status(BAD_REQUEST).send(noResult);
+      return res.status( BAD_REQUEST ).send( noResult );
     }
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -277,49 +287,52 @@ router.get('/:portfolioId', Authenticator, async (req, res) => {
  *           - portfolioId
  */
 
-router.put('/update/:portfolioId', Authenticator, async (req, res) => {
+router.put( '/update/:portfolioId', Authenticator, async ( req, res ) => {
   try {
-    const { portfolioId } = req.params;
-    const { title, description, artisanId, imageUrl } = req.body;
+    const {
+      portfolioId
+    } = req.params;
+    const {
+      title,
+      description,
+      artisanId,
+      imageUrl
+    } = req.body;
 
-    if (!title || !description || !artisanId)
-      return res.status(BAD_REQUEST).send(paramMissingError);
+    if ( !title || !description || !artisanId )
+      return res.status( BAD_REQUEST ).send( paramMissingError );
 
-    if (imageUrl.length !== 0)
-      return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( imageUrl.length !== 0 )
+      return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const portfolio = await Portfolio.findOneAndUpdate(
-      {
-        _id: portfolioId,
+    const portfolio = await Portfolio.findOneAndUpdate( {
+      _id: portfolioId,
+    }, {
+      $set: {
+        title,
+        description,
+        artisanId,
+        imageUrl,
+        updatedOn: Date.now(),
+        updatedBy: artisanId,
       },
-      {
-        $set: {
-          title,
-          description,
-          artisanId,
-          imageUrl,
-          updatedOn: Date.now(),
-          updatedBy: artisanId,
-        },
-      },
-      {
-        new: true,
-      }
-    ).populate('artisanId', 'firstname lastname email phone');
+    }, {
+      new: true,
+    } ).populate( 'artisanId', 'firstname lastname email phone' );
 
-    if (!portfolio) {
-      return res.status(BAD_REQUEST).send(failedRequest);
+    if ( !portfolio ) {
+      return res.status( BAD_REQUEST ).send( failedRequest );
     }
 
     singleResponse.result = portfolio;
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -335,27 +348,29 @@ router.put('/update/:portfolioId', Authenticator, async (req, res) => {
  *      required: true
  */
 
-router.delete('/delete/:portfolioId', Authenticator, async (req, res) => {
+router.delete( '/delete/:portfolioId', Authenticator, async ( req, res ) => {
   try {
-    const { portfolioId } = req.params;
-    const portfolio = await Portfolio.findOneAndDelete({
+    const {
+      portfolioId
+    } = req.params;
+    const portfolio = await Portfolio.findOneAndDelete( {
       _id: portfolioId,
       artisanId: req.user._id
-    });
+    } );
 
-    if (portfolio) {
+    if ( portfolio ) {
       singleResponse.result = portfolio;
-      return res.status(OK).send(singleResponse);
+      return res.status( OK ).send( singleResponse );
     } else {
-      return res.status(BAD_REQUEST).send(singleResponse);
+      return res.status( BAD_REQUEST ).send( singleResponse );
     }
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /******************************************************************************
  *                                     Export

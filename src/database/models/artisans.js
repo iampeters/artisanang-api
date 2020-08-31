@@ -7,18 +7,18 @@ const model = mongoose.model;
 const artisansSchema = new Schema( {
   email: {
     type: String,
-    required: true,
+    required: [true, 'Email field is required'],
     unique: true,
   },
   firstname: {
     type: String,
     maxlength: 20,
-    required: true,
+    required: [true, 'Firstname field is required'],
   },
   lastname: {
     type: String,
     maxlength: 20,
-    required: true,
+    required: [true, 'Lastname field is required'],
   },
   name: {
     type: String,
@@ -29,11 +29,11 @@ const artisansSchema = new Schema( {
   },
   password: {
     type: String,
-    required: true,
+    required: [true, 'Password field is required'],
   },
   loginAttempts: {
     type: Number,
-    required: true,
+    required: [true, 'Login Attempt is required'],
     default: 0,
   },
   lockUntil: {
@@ -77,7 +77,7 @@ const artisansSchema = new Schema( {
     type: String,
     maxlength: 11,
     minlength: 11,
-    required: true,
+    required: [true, 'Phone Number field is required'],
     unique: true,
   },
   imageUrl: {

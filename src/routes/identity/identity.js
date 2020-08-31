@@ -23,7 +23,7 @@ const Mailer = require('../../engine/mailer');
 
 const Users = require('../../database/models/users');
 const Admins = require('../../database/models/admins');
-const Artisans = require('../../database/models/artisans');
+// const Artisans = require('../../database/models/artisans');
 const RefreshToken = require('../../middlewares/refreshToken');
 const Authenticator = require('../../middlewares/auth');
 
@@ -234,7 +234,7 @@ router.post('/token', async (req, res) => {
 router.post('/artisan/token', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await Artisans.findOne({
+    const user = await Users.findOne({
       email,
     });
     if (!user) return res.status(BAD_REQUEST).json(invalidCredentials);
@@ -244,7 +244,7 @@ router.post('/artisan/token', async (req, res) => {
     const isPasswordValid = await decrypt(password, user.password);
     if (!isPasswordValid) {
       if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-        await Artisans.findOneAndUpdate(
+        await Users.findOneAndUpdate(
           {
             email,
           },
@@ -263,7 +263,7 @@ router.post('/artisan/token', async (req, res) => {
         return res.status(LOCKED).json(accountLocked);
       }
 
-      await Artisans.findOneAndUpdate(
+      await Users.findOneAndUpdate(
         {
           email,
         },
@@ -281,7 +281,7 @@ router.post('/artisan/token', async (req, res) => {
       if (user.lockUntil > Date.now()) {
         return res.status(LOCKED).json(accountLocked);
       } else {
-        await Artisans.findOneAndUpdate(
+        await Users.findOneAndUpdate(
           {
             email,
           },
@@ -297,7 +297,7 @@ router.post('/artisan/token', async (req, res) => {
     }
 
     if (user.loginAttempts !== 0) {
-      await Artisans.findOneAndUpdate(
+      await Users.findOneAndUpdate(
         {
           email,
         },
@@ -314,7 +314,7 @@ router.post('/artisan/token', async (req, res) => {
     const token = await user.generateAuthToken();
     if (!token) return res.status(BAD_REQUEST).json(invalidCredentials);
 
-    await Artisans.findOneAndUpdate(
+    await Users.findOneAndUpdate(
       {
         email,
       },
@@ -384,7 +384,6 @@ router.post('/artisan/token', async (req, res) => {
  */
 
 router.post('/refresh', RefreshToken, async (req, res) => {
-  const { auth_token } = req.body;
   try {
     const user = await Users.findOne({
       _id: req.user._id,
@@ -433,9 +432,8 @@ router.post('/refresh', RefreshToken, async (req, res) => {
  */
 
 router.post('/artisan/refresh', RefreshToken, async (req, res) => {
-  const { auth_token } = req.body;
   try {
-    const user = await Artisans.findOne({
+    const user = await Users.findOne({
       _id: req.user._id,
     });
     if (!user) return res.status(BAD_REQUEST).json(invalidCredentials);
@@ -690,7 +688,7 @@ router.post('/artisan/forgotPassword', async (req, res) => {
   if (!email) return res.status(BAD_REQUEST).send(badRequest);
 
   try {
-    const user = await Artisans.findOne({
+    const user = await Users.findOne({
       email: email,
     });
     if (user) {
@@ -985,7 +983,7 @@ router.put('/artisan/changePassword', async (req, res) => {
       return res.status(BAD_REQUEST).json(passwordMatch);
     }
 
-    const User = await Admins.findOne({
+    const User = await Users.findOne({
       _id: artisanId,
     });
 
@@ -997,7 +995,7 @@ router.put('/artisan/changePassword', async (req, res) => {
 
     const hash = await encrypt(newPassword);
 
-    const user = await Admins.findOneAndUpdate(
+    const user = await Users.findOneAndUpdate(
       {
         _id: artisanId,
       },
@@ -1144,7 +1142,7 @@ router.put('/artisan/resetPassword', Authenticator, async (req, res) => {
 
     const hash = await encrypt(newPassword);
 
-    const user = await Artisans.findOneAndUpdate(
+    const user = await Users.findOneAndUpdate(
       {
         _id: req.user._id,
       },

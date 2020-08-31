@@ -1,7 +1,6 @@
 const mongoose = require( 'mongoose' );
 const Users = require( './users' );
 const Category = require( './category' );
-const Artisans = require( './artisans' );
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
@@ -22,7 +21,7 @@ const jobsSchema = new Schema( {
   },
   artisanId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: Artisans,
+    ref: Users,
     required: true
   },
   userId: {
@@ -31,7 +30,7 @@ const jobsSchema = new Schema( {
     required: true
   },
   budget: {
-    type: String,
+    type: Number,
   },
   createdOn: {
     type: Date,

@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
-const config = require('config');
-const jwt = require('jsonwebtoken');
+const mongoose = require( 'mongoose' );
+const config = require( 'config' );
+const jwt = require( 'jsonwebtoken' );
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
 
-const userSchema = new Schema({
+const userSchema = new Schema( {
   email: {
     type: String,
     required: true,
@@ -23,6 +23,14 @@ const userSchema = new Schema({
   },
   name: {
     type: String,
+  },
+  reviews: {
+    type: Number,
+    default: 0,
+  },
+  rating: {
+    type: Number,
+    default: 0,
   },
   phoneNumber: {
     type: String,
@@ -53,6 +61,11 @@ const userSchema = new Schema({
   password: {
     type: String,
     required: true,
+  },
+  userType: {
+    type: Number,
+    enum: [ 1, 2 ],
+    default: 1
   },
   loginAttempts: {
     type: Number,
@@ -89,39 +102,63 @@ const userSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  createdBy: {
+    type: String,
+    default: 'client'
+  },
   updateOn: {
     type: Date,
   },
   updatedBy: {
     type: String,
   },
-  isAdmin: {
-    type: Boolean,
-    default: false,
+  category: {
+    type: String,
   },
-});
+  description: {
+    type: String,
+  },
+  guarantor: {
+    type: String,
+  },
+  guarantorPhoneNumber: {
+    type: String,
+  },
+  businessName: {
+    type: String,
+    unique: true,
+  },
+  NIN: {
+    type: String,
+    unique: true,
+  },
+  RCNumber: {
+    type: String,
+    unique: true,
+  },
+  experience: {
+    type: Number,
+  },
+
+} );
 
 userSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign(
-    {
+  const token = jwt.sign( {
       _id: this._id,
       type: 'access_token',
-      userType: 1
+      userType: this.userType
     },
-    config.get('jwtPrivateKey'),
-    {
+    config.get( 'jwtPrivateKey' ), {
       expiresIn: '3d',
     }
   );
 
-  const refresh_token = jwt.sign(
-    {
+  const refresh_token = jwt.sign( {
       _id: this._id,
       type: 'refresh_token',
-      userType: 1
+      userType: this.userType
     },
-    config.get('refreshTokenPrivateKey'),
-    {
+    config.get( 'refreshTokenPrivateKey' ), {
       expiresIn: '7d',
     }
   );
@@ -132,13 +169,11 @@ userSchema.methods.generateAuthToken = function () {
 };
 
 userSchema.methods.generatePasswordRecoveryToken = function () {
-  const token = jwt.sign(
-    {
+  const token = jwt.sign( {
       _id: this._id,
       type: 'password_recovery',
     },
-    config.get('jwtPrivateKey'),
-    {
+    config.get( 'jwtPrivateKey' ), {
       expiresIn: '5m',
     }
   );
@@ -151,8 +186,8 @@ userSchema.methods.generatePassword = function () {
     '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let result = '';
 
-  for (let i = length; i > 0; --i) {
-    result += chars[Math.round(Math.random() * (chars.length - 1))];
+  for ( let i = length; i > 0; --i ) {
+    result += chars[ Math.round( Math.random() * ( chars.length - 1 ) ) ];
   }
   return result;
 };
@@ -163,13 +198,13 @@ userSchema.methods.generateCode = function () {
     '0123456789';
   let result = '';
 
-  for (let i = length; i > 0; --i) {
-    result += chars[Math.round(Math.random() * (chars.length - 1))];
+  for ( let i = length; i > 0; --i ) {
+    result += chars[ Math.round( Math.random() * ( chars.length - 1 ) ) ];
   }
   return result;
 };
 
 
-const Users = model('Users', userSchema, 'users');
+const Users = model( 'Users', userSchema, 'users' );
 
 module.exports = Users;

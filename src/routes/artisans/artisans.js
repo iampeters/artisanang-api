@@ -18,7 +18,8 @@ const {
   emailResponse,
 } = require( '../../shared/constants' );
 
-const Artisans = require( '../../database/models/artisans' );
+// const Artisans = require( '../../database/models/artisans' );
+const Users = require( '../../database/models/users' );
 const Authenticator = require( '../../middlewares/auth' );
 const encrypt = require( '../../security/encrypt' );
 const Mailer = require( '../../engine/mailer' );
@@ -62,8 +63,9 @@ router.get( '/all', Authenticator, async ( req, res ) => {
   };
 
   const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) :
-    {};
+    JSON.parse( req.query.whereCondition ) : {};
+
+  whereCondition.userType = 2;
 
   if ( whereCondition.name ) {
     whereCondition.name.trim();
@@ -71,18 +73,17 @@ router.get( '/all', Authenticator, async ( req, res ) => {
   }
 
   try {
-    const users = await Artisans.find( whereCondition )
+    const users = await Users.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .select( {
         __v: 0,
         password: 0,
       } )
-      .populate( 'userId', 'firstname lastname _id' )
       .sort( {
         _id: -1,
       } );
-    const total = await Artisans.countDocuments( whereCondition );
+    const total = await Users.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = users;
@@ -132,11 +133,13 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
   };
 
   const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) :
-    {};
+    JSON.parse( req.query.whereCondition ) : {};
+
+  whereCondition.userType = 2;
+
 
   try {
-    const users = await Artisans.find( whereCondition )
+    const users = await Users.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .select( {
@@ -147,7 +150,7 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
       .sort( {
         _id: -1,
       } );
-    const total = await Artisans.countDocuments( whereCondition );
+    const total = await Users.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = users;
@@ -182,7 +185,7 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
     artisanId
   } = req.params;
   try {
-    const user = await Artisans.findOne( {
+    const user = await Users.findOne( {
       _id: artisanId,
     } );
     if ( user ) {
@@ -242,7 +245,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       email,
       phoneNumber,
       password,
-      userId
+      createdBy
     } = req.body;
 
     if ( !firstname || !lastname || !email || !phoneNumber || !password ) {
@@ -254,14 +257,14 @@ router.post( '/create', Authenticator, async ( req, res ) => {
     phoneNumber.trim();
     req.body.email.toLowerCase();
 
-    let user = await Artisans.findOne( {
+    let user = await Users.findOne( {
       email,
     } );
     if ( user ) {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    const phone = await Artisans.findOne( {
+    const phone = await Users.findOne( {
       phoneNumber,
     } );
     if ( phone ) {
@@ -273,7 +276,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
 
     const code = await user.generateCode();
 
-    user = new Artisans( {
+    user = new Users( {
       firstname,
       lastname,
       address,
@@ -281,7 +284,6 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       email,
       imageUrl,
       category,
-      userId,
       businessName,
       RCNumber,
       NIN,
@@ -289,7 +291,8 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       country,
       name: `${firstname} ${lastname}`,
       password: req.body.password,
-      verificationCode: code
+      verificationCode: code,
+      createdBy
     } );
 
     const token = await user.generateAuthToken();
@@ -353,7 +356,7 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
     artisanId
   } = req.params;
   try {
-    const user = await Artisans.findOne( {
+    const user = await Users.findOne( {
       _id: artisanId,
     } );
     if ( user ) {
@@ -469,27 +472,27 @@ router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
       return res.status( BAD_REQUEST ).send( paramMissingError );
 
     if ( NIN ) {
-      const nin = await Artisans.findOne( {
+      const nin = await Users.findOne( {
         NIN,
       } );
       if ( nin ) return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
     if ( RCNumber ) {
-      const rcNumber = await Artisans.findOne( {
+      const rcNumber = await Users.findOne( {
         RCNumber,
       } );
       if ( rcNumber ) return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
     if ( address ) {
-      const Address = await Artisans.findOne( {
+      const Address = await Users.findOne( {
         address,
       } );
       if ( Address ) return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    const user = await Artisans.findOneAndUpdate( {
+    const user = await Users.findOneAndUpdate( {
       _id: artisanId,
     }, {
       $set: {
@@ -553,7 +556,7 @@ router.delete( '/delete/:artisanId', Authenticator, async ( req, res ) => {
     const {
       artisanId
     } = req.params;
-    const user = await Artisans.findOneAndDelete( {
+    const user = await Users.findOneAndDelete( {
       _id: artisanId,
     } );
 
@@ -585,42 +588,38 @@ router.delete( '/delete/:artisanId', Authenticator, async ( req, res ) => {
  *      required: true
  */
 
-router.put(
-  '/unlockAccount/:artisanId',
-  [ Authenticator, isAdmin ],
-  async ( req, res ) => {
-    try {
-      const {
-        artisanId
-      } = req.params;
+router.put( '/unlockAccount/:artisanId', [ Authenticator, isAdmin ], async ( req, res ) => {
+  try {
+    const {
+      artisanId
+    } = req.params;
 
-      const user = await Artisans.findOneAndUpdate( {
-        _id: artisanId,
-      }, {
-        $set: {
-          isLocked: false,
-          isActive: true,
-          lockUntil: null,
-          loginAttempts: 0,
-        },
-      }, {
-        new: true,
-      } );
+    const user = await Users.findOneAndUpdate( {
+      _id: artisanId,
+    }, {
+      $set: {
+        isLocked: false,
+        isActive: true,
+        lockUntil: null,
+        loginAttempts: 0,
+      },
+    }, {
+      new: true,
+    } );
 
-      if ( user ) {
-        singleResponse.result = user;
-        return res.status( OK ).send( singleResponse );
-      } else {
-        return res.status( BAD_REQUEST ).send( singleResponse );
-      }
-    } catch ( err ) {
-      logger.error( err.message, err );
-      return res.status( BAD_REQUEST ).json( {
-        error: err.message,
-      } );
+    if ( user ) {
+      singleResponse.result = user;
+      return res.status( OK ).send( singleResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( singleResponse );
     }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
   }
-);
+} );
 
 /**
  * @swagger
@@ -636,39 +635,35 @@ router.put(
  *      required: true
  */
 
-router.put(
-  '/deactivate/:artisanId',
-  [ Authenticator, isAdmin ],
-  async ( req, res ) => {
-    try {
-      const {
-        artisanId
-      } = req.params;
+router.put( '/deactivate/:artisanId', [ Authenticator, isAdmin ], async ( req, res ) => {
+  try {
+    const {
+      artisanId
+    } = req.params;
 
-      const user = await Users.findOneAndUpdate( {
-        _id: artisanId,
-      }, {
-        $set: {
-          isActive: false,
-        },
-      }, {
-        new: true,
-      } );
+    const user = await Users.findOneAndUpdate( {
+      _id: artisanId,
+    }, {
+      $set: {
+        isActive: false,
+      },
+    }, {
+      new: true,
+    } );
 
-      if ( user ) {
-        singleResponse.result = user;
-        return res.status( OK ).send( singleResponse );
-      } else {
-        return res.status( BAD_REQUEST ).send( singleResponse );
-      }
-    } catch ( err ) {
-      logger.error( err.message, err );
-      return res.status( BAD_REQUEST ).json( {
-        error: err.message,
-      } );
+    if ( user ) {
+      singleResponse.result = user;
+      return res.status( OK ).send( singleResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( singleResponse );
     }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
   }
-);
+} );
 
 
 /**
@@ -751,7 +746,7 @@ router.post( '/email-confirmation', Authenticator, async ( req, res ) => {
 
     if ( !email || !code ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const user = await Artisans.findOne( {
+    const user = await Users.findOne( {
       _id: req.user._id,
       email,
       verificationCode: code
@@ -762,7 +757,7 @@ router.post( '/email-confirmation', Authenticator, async ( req, res ) => {
     const token = await user.generateAuthToken();
     if ( !token ) return res.status( BAD_REQUEST ).json( badRequest );
 
-    await Artisans.findOneAndUpdate( {
+    await Users.findOneAndUpdate( {
       email,
     }, {
       $set: {
@@ -848,7 +843,7 @@ router.post( '/verify-email', Authenticator, async ( req, res ) => {
 
     if ( !email ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    let user = await Artisans.findOne( {
+    let user = await Users.findOne( {
       email
     } );
 
@@ -860,7 +855,7 @@ router.post( '/verify-email', Authenticator, async ( req, res ) => {
     const token = await user.generateAuthToken();
     if ( !token ) return res.status( BAD_REQUEST ).json( badRequest );
 
-    user = await Artisans.findOneAndUpdate( {
+    user = await Users.findOneAndUpdate( {
       email,
     }, {
       $set: {
