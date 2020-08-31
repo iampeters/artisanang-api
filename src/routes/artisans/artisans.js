@@ -146,7 +146,6 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
         __v: 0,
         password: 0,
       } )
-      .populate( 'userId', 'firstname lastname _id' )
       .sort( {
         _id: -1,
       } );
