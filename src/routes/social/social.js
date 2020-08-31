@@ -102,7 +102,6 @@ router.post( '/auth', async ( req, res ) => {
         phoneNumber: user.phoneNumber,
         address: user.address,
         imageUrl: user.imageUrl,
-        lastLogin: user.lastLogin,
       };
 
       // send email to user
@@ -140,7 +139,8 @@ router.post( '/auth', async ( req, res ) => {
         imageUrl,
         password: req.body.password,
         loginTime: Date.now(),
-        name: `${firstname} ${lastname}`
+        name: `${firstname} ${lastname}`,
+        isEmailVerified: true
       } );
 
       const token = await user.generateAuthToken();

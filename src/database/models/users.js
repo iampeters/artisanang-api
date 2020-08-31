@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const config = require('config');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
@@ -39,6 +38,13 @@ const userSchema = new Schema({
   },
   state: {
     type: String,
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationCode: {
+    type: Number,
   },
   country: {
     type: String,
@@ -100,6 +106,7 @@ userSchema.methods.generateAuthToken = function () {
     {
       _id: this._id,
       type: 'access_token',
+      userType: 1
     },
     config.get('jwtPrivateKey'),
     {
@@ -111,6 +118,7 @@ userSchema.methods.generateAuthToken = function () {
     {
       _id: this._id,
       type: 'refresh_token',
+      userType: 1
     },
     config.get('refreshTokenPrivateKey'),
     {
@@ -148,6 +156,19 @@ userSchema.methods.generatePassword = function () {
   }
   return result;
 };
+
+userSchema.methods.generateCode = function () {
+  const length = 6;
+  const chars =
+    '0123456789';
+  let result = '';
+
+  for (let i = length; i > 0; --i) {
+    result += chars[Math.round(Math.random() * (chars.length - 1))];
+  }
+  return result;
+};
+
 
 const Users = model('Users', userSchema, 'users');
 

@@ -1,8 +1,11 @@
-require('module-alias/register');
-const express = require('express');
-const { BAD_REQUEST, OK } = require('http-status-codes');
+require( 'module-alias/register' );
+const express = require( 'express' );
+const {
+  BAD_REQUEST,
+  OK
+} = require( 'http-status-codes' );
 
-const logger = require('../../shared/Logger');
+const logger = require( '../../shared/Logger' );
 const {
   paramMissingError,
   singleResponse,
@@ -11,14 +14,15 @@ const {
   noResult,
   userToken,
   failedRequest,
-} = require('../../shared/constants');
-const encrypt = require('../../security/encrypt');
-const decrypt = require('../../security/decrypt');
+  badRequest,
+  emailResponse
+} = require( '../../shared/constants' );
+const encrypt = require( '../../security/encrypt' );
 
-const Users = require('../../database/models/users');
-const Authenticator = require('../../middlewares/auth');
-const Mailer = require('../../engine/mailer');
-const isAdmin = require('../../middlewares/isAdmin');
+const Users = require( '../../database/models/users' );
+const Authenticator = require( '../../middlewares/auth' );
+const Mailer = require( '../../engine/mailer' );
+const isAdmin = require( '../../middlewares/isAdmin' );
 
 //  start
 const router = express.Router();
@@ -61,41 +65,40 @@ const router = express.Router();
  *           $ref: '#/components/schemas/User'
  */
 
-router.get('/all', Authenticator, async (req, res) => {
+router.get( '/all', Authenticator, async ( req, res ) => {
   const pagination = {
-    page: req.query.page ? parseInt(req.query.page, 10) : 1,
-    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition
-    ? JSON.parse(req.query.whereCondition)
-    : {};
+  const whereCondition = req.query.whereCondition ?
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const users = await Users.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .select({
+    const users = await Users.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .select( {
         __v: 0,
         password: 0,
-      })
-      .sort({
+      } )
+      .sort( {
         _id: -1,
-      });
-    const total = await Users.countDocuments(whereCondition);
+      } );
+    const total = await Users.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = users;
     paginatedResponse.total = total;
 
-    return res.status(OK).send(paginatedResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -135,41 +138,40 @@ router.get('/all', Authenticator, async (req, res) => {
  *           $ref: '#/components/schemas/User'
  */
 
-router.get('/admin/all', Authenticator, async (req, res) => {
+router.get( '/admin/all', Authenticator, async ( req, res ) => {
   const pagination = {
-    page: req.query.page ? parseInt(req.query.page, 10) : 1,
-    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition
-    ? JSON.parse(req.query.whereCondition)
-    : {};
+  const whereCondition = req.query.whereCondition ?
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const users = await Users.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .select({
+    const users = await Users.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .select( {
         __v: 0,
         password: 0,
-      })
-      .sort({
+      } )
+      .sort( {
         _id: -1,
-      });
-    const total = await Users.countDocuments(whereCondition);
+      } );
+    const total = await Users.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = users;
     paginatedResponse.total = total;
 
-    return res.status(OK).send(paginatedResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -198,32 +200,34 @@ router.get('/admin/all', Authenticator, async (req, res) => {
  *           $ref: '#/components/schemas/Users'
  */
 
-router.get('/:userId', Authenticator, async (req, res) => {
-  const { userId } = req.params;
+router.get( '/:userId', Authenticator, async ( req, res ) => {
+  const {
+    userId
+  } = req.params;
   try {
-    const user = await Users.findOne({
+    const user = await Users.findOne( {
       _id: userId,
-    }).select({
+    } ).select( {
       loginAttempts: 0,
       password: 0,
       lockUntil: 0,
       isAdmin: 0,
       MFA: 0,
       isLocked: 0,
-    });
-    if (user) {
+    } );
+    if ( user ) {
       singleResponse.result = user;
-      return res.status(OK).send(singleResponse);
+      return res.status( OK ).send( singleResponse );
     } else {
-      return res.status(BAD_REQUEST).send(noResult);
+      return res.status( BAD_REQUEST ).send( noResult );
     }
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -274,7 +278,7 @@ router.get('/:userId', Authenticator, async (req, res) => {
  *           - Country
  */
 
-router.post('/create', async (req, res) => {
+router.post( '/create', async ( req, res ) => {
   try {
     const {
       firstname,
@@ -285,8 +289,8 @@ router.post('/create', async (req, res) => {
       imageUrl,
     } = req.body;
 
-    if (!firstname || !lastname || !email || !password) {
-      return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( !firstname || !lastname || !email || !password ) {
+      return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
     firstname.trim();
@@ -294,24 +298,24 @@ router.post('/create', async (req, res) => {
     phoneNumber && phoneNumber.trim();
     email.toLowerCase();
 
-    let user = await Users.findOne({
+    let user = await Users.findOne( {
       email,
-    });
-    if (user) {
-      return res.status(BAD_REQUEST).json(duplicateEntry);
+    } );
+    if ( user ) {
+      return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    if (phoneNumber) {
-      const phone = await Users.findOne({
+    if ( phoneNumber ) {
+      const phone = await Users.findOne( {
         phoneNumber,
-      });
+      } );
 
-      if (phone) {
-        return res.status(BAD_REQUEST).json(duplicateEntry);
+      if ( phone ) {
+        return res.status( BAD_REQUEST ).json( duplicateEntry );
       }
     }
 
-    if (phoneNumber === null) delete req.body.phoneNumber;
+    if ( phoneNumber === null ) delete req.body.phoneNumber;
 
     // if (address) {
     //   const phone = await Users.findOne({
@@ -323,10 +327,12 @@ router.post('/create', async (req, res) => {
     //   }
     // }
 
-    const hash = await encrypt(password);
+    const hash = await encrypt( password );
     req.body.password = hash;
 
-    user = new Users({
+    const code = await user.generateCode();
+
+    user = new Users( {
       firstname,
       lastname,
       phoneNumber,
@@ -334,10 +340,11 @@ router.post('/create', async (req, res) => {
       imageUrl,
       password: req.body.password,
       name: `${firstname} ${lastname}`,
-    });
+      verificationCode: code
+    } );
 
     const token = await user.generateAuthToken();
-    if (!token) return res.status(BAD_REQUEST).json(failedRequest);
+    if ( !token ) return res.status( BAD_REQUEST ).json( failedRequest );
 
     await user.save();
 
@@ -358,21 +365,21 @@ router.post('/create', async (req, res) => {
     // send onboarding email
     // send email to user
     await Mailer(
-      'Welcome to Artisana',
+      `Welcome to Artisana, Click this link to verify your email https://artisana.ng/onboarding/email-confirmation/${user.email}/${token.token}/${code}`,
       user.email,
       'Welcome to Artisana 🎉',
-      (err) => {
-        logger.error(err.message, err);
+      ( err ) => {
+        logger.error( err.message, err );
       }
     );
-    return res.status(OK).send(userToken);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( userToken );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -409,9 +416,11 @@ router.post('/create', async (req, res) => {
  *               type: string
  */
 
-router.put('/update/:userId', Authenticator, async (req, res) => {
+router.put( '/update/:userId', Authenticator, async ( req, res ) => {
   try {
-    const { userId } = req.params;
+    const {
+      userId
+    } = req.params;
     const {
       firstname,
       lastname,
@@ -431,47 +440,41 @@ router.put('/update/:userId', Authenticator, async (req, res) => {
       !phoneNumber ||
       !imageUrl
     )
-      return res.status(BAD_REQUEST).send(paramMissingError);
+      return res.status( BAD_REQUEST ).send( paramMissingError );
 
-    const user = await Users.findOneAndUpdate(
-      {
-        _id: userId,
+    const user = await Users.findOneAndUpdate( {
+      _id: userId,
+    }, {
+      $set: {
+        firstname,
+        lastname,
+        email,
+        phoneNumber,
+        address,
+        imageUrl,
+        state,
+        country,
       },
-      {
-        $set: {
-          firstname,
-          lastname,
-          firstname,
-          lastname,
-          email,
-          phoneNumber,
-          address,
-          imageUrl,
-          state,
-          country,
-        },
-      },
-      {
-        new: true,
-      }
-    ).select({
+    }, {
+      new: true,
+    } ).select( {
       password: 0,
       __v: 0,
-    });
+    } );
 
-    if (!user) {
-      return res.status(BAD_REQUEST).send(failedRequest);
+    if ( !user ) {
+      return res.status( BAD_REQUEST ).send( failedRequest );
     }
 
     singleResponse.result = user;
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -487,26 +490,28 @@ router.put('/update/:userId', Authenticator, async (req, res) => {
  *      required: true
  */
 
-router.delete('/delete/:userId', Authenticator, async (req, res) => {
+router.delete( '/delete/:userId', Authenticator, async ( req, res ) => {
   try {
-    const { userId } = req.params;
-    const user = await Users.findOneAndDelete({
+    const {
+      userId
+    } = req.params;
+    const user = await Users.findOneAndDelete( {
       _id: userId,
-    });
+    } );
 
-    if (user) {
+    if ( user ) {
       singleResponse.result = user;
-      return res.status(OK).send(singleResponse);
+      return res.status( OK ).send( singleResponse );
     } else {
-      return res.status(BAD_REQUEST).send(singleResponse);
+      return res.status( BAD_REQUEST ).send( singleResponse );
     }
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -524,39 +529,37 @@ router.delete('/delete/:userId', Authenticator, async (req, res) => {
 
 router.put(
   '/unlockAccount/:userId',
-  [Authenticator, isAdmin],
-  async (req, res) => {
+  [ Authenticator, isAdmin ],
+  async ( req, res ) => {
     try {
-      const { artisanId } = req.params;
+      const {
+        artisanId
+      } = req.params;
 
-      const user = await Users.findOneAndUpdate(
-        {
-          _id: artisanId,
+      const user = await Users.findOneAndUpdate( {
+        _id: artisanId,
+      }, {
+        $set: {
+          isLocked: false,
+          isActive: true,
+          lockUntil: null,
+          loginAttempts: 0,
         },
-        {
-          $set: {
-            isLocked: false,
-            isActive: true,
-            lockUntil: null,
-            loginAttempts: 0,
-          },
-        },
-        {
-          new: true,
-        }
-      );
+      }, {
+        new: true,
+      } );
 
-      if (user) {
+      if ( user ) {
         singleResponse.result = user;
-        return res.status(OK).send(singleResponse);
+        return res.status( OK ).send( singleResponse );
       } else {
-        return res.status(BAD_REQUEST).send(singleResponse);
+        return res.status( BAD_REQUEST ).send( singleResponse );
       }
-    } catch (err) {
-      logger.error(err.message, err);
-      return res.status(BAD_REQUEST).json({
+    } catch ( err ) {
+      logger.error( err.message, err );
+      return res.status( BAD_REQUEST ).json( {
         error: err.message,
-      });
+      } );
     }
   }
 );
@@ -577,36 +580,34 @@ router.put(
 
 router.put(
   '/deactivate/:userId',
-  [Authenticator, isAdmin],
-  async (req, res) => {
+  [ Authenticator, isAdmin ],
+  async ( req, res ) => {
     try {
-      const { userId } = req.params;
+      const {
+        userId
+      } = req.params;
 
-      const user = await Users.findOneAndUpdate(
-        {
-          _id: userId,
+      const user = await Users.findOneAndUpdate( {
+        _id: userId,
+      }, {
+        $set: {
+          isActive: false,
         },
-        {
-          $set: {
-            isActive: false,
-          },
-        },
-        {
-          new: true,
-        }
-      );
+      }, {
+        new: true,
+      } );
 
-      if (user) {
+      if ( user ) {
         singleResponse.result = user;
-        return res.status(OK).send(singleResponse);
+        return res.status( OK ).send( singleResponse );
       } else {
-        return res.status(BAD_REQUEST).send(singleResponse);
+        return res.status( BAD_REQUEST ).send( singleResponse );
       }
-    } catch (err) {
-      logger.error(err.message, err);
-      return res.status(BAD_REQUEST).json({
+    } catch ( err ) {
+      logger.error( err.message, err );
+      return res.status( BAD_REQUEST ).json( {
         error: err.message,
-      });
+      } );
     }
   }
 );
@@ -627,39 +628,204 @@ router.put(
 
 router.put(
   '/activate/:userId',
-  [Authenticator, isAdmin],
-  async (req, res) => {
+  [ Authenticator, isAdmin ],
+  async ( req, res ) => {
     try {
-      const { userId } = req.params;
+      const {
+        userId
+      } = req.params;
 
-      const user = await Users.findOneAndUpdate(
-        {
-          _id: userId,
+      const user = await Users.findOneAndUpdate( {
+        _id: userId,
+      }, {
+        $set: {
+          isActive: false,
         },
-        {
-          $set: {
-            isActive: false,
-          },
-        },
-        {
-          new: true,
-        }
-      );
+      }, {
+        new: true,
+      } );
 
-      if (user) {
+      if ( user ) {
         singleResponse.result = user;
-        return res.status(OK).send(singleResponse);
+        return res.status( OK ).send( singleResponse );
       } else {
-        return res.status(BAD_REQUEST).send(singleResponse);
+        return res.status( BAD_REQUEST ).send( singleResponse );
       }
-    } catch (err) {
-      logger.error(err.message, err);
-      return res.status(BAD_REQUEST).json({
+    } catch ( err ) {
+      logger.error( err.message, err );
+      return res.status( BAD_REQUEST ).json( {
         error: err.message,
-      });
+      } );
     }
   }
 );
+
+/**
+ * @swagger
+ * /api/users/email-confirmation:
+ *   post:
+ *     tags:
+ *       - Users
+ *     name: Email confirmation
+ *     summary: Confirm Email
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             code:
+ *               type: number
+ *             email:
+ *               type: string
+ *               format: email
+ */
+
+router.post( '/email-confirmation', Authenticator, async ( req, res ) => {
+  try {
+    const {
+      email,
+      code,
+    } = req.body;
+
+    if ( !email || !code ) return res.status( BAD_REQUEST ).json( paramMissingError );
+
+    const user = await Users.findOne( {
+      _id: req.user._id,
+      email,
+      verificationCode: code
+    } );
+    if ( !user ) return res.status( BAD_REQUEST ).json( badRequest );
+
+
+    const token = await user.generateAuthToken();
+    if ( !token ) return res.status( BAD_REQUEST ).json( badRequest );
+
+    await Users.findOneAndUpdate( {
+      email,
+    }, {
+      $set: {
+        isEmailVerified: true,
+        lastLogin: user.loginTime,
+        loginTime: Date.now(),
+      },
+    } );
+
+    userToken.token = token.token;
+    userToken.refresh_token = token.refresh_token;
+    delete userToken.permissions;
+
+    userToken.user = {
+      firstname: user.firstname,
+      lastname: user.lastname,
+      username: user.username,
+      lastLogin: user.lastLogin,
+      _id: user._id,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      address: user.address,
+      imageUrl: user.imageUrl,
+      createdOn: user.createdOn,
+    };
+
+    // send email to user
+    await Mailer(
+      'You just logged in',
+      user.email,
+      '🛡Login Notification',
+      ( err ) => {
+        logger.error( err.message, err );
+      }
+    );
+
+    if ( user ) {
+      return res.status( OK ).json( userToken );
+    } else {
+      return res.status( BAD_REQUEST ).send( badRequest );
+    }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+/**
+ * @swagger
+ * /api/users/verify-email:
+ *   post:
+ *     tags:
+ *       - Users
+ *     name: Email Verification
+ *     summary: Verify Email
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             email:
+ *               type: string
+ *               format: email
+ */
+
+router.post( '/verify-email', Authenticator, async ( req, res ) => {
+  try {
+    const {
+      email,
+    } = req.body;
+
+    if ( !email ) return res.status( BAD_REQUEST ).json( paramMissingError );
+
+    let user = await Users.findOne( {
+      email
+    } );
+
+    if ( !user ) return res.status( BAD_REQUEST ).json( badRequest );
+
+    const code = await user.generateCode();
+    if ( !code ) return res.status( BAD_REQUEST ).json( badRequest );
+
+    const token = await user.generateAuthToken();
+    if ( !token ) return res.status( BAD_REQUEST ).json( badRequest );
+
+    user = await Users.findOneAndUpdate( {
+      email,
+    }, {
+      $set: {
+        verificationCode: code
+      },
+    }, {
+      new: true,
+    } );
+
+    if ( user ) {
+      await Mailer(
+        `Hello ${user.firstname}, Click this link to verify your email https://artisana.ng/onboarding/email-confirmation/${user.email}/${token.token}/${code}`,
+        user.email,
+        'Verify your email 🎉',
+        ( err ) => {
+          logger.error( err.message, err );
+        }
+      );
+
+      return res.status( OK ).send( emailResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( badRequest );
+    }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
 
 /******************************************************************************
  *                                     Export

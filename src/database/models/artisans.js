@@ -1,11 +1,10 @@
-const mongoose = require('mongoose');
-const Users = require('./users');
-const { stringify } = require('yamljs');
+const mongoose = require( 'mongoose' );
+const Users = require( './users' );
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
 
-const artisansSchema = new Schema({
+const artisansSchema = new Schema( {
   email: {
     type: String,
     required: true,
@@ -40,9 +39,16 @@ const artisansSchema = new Schema({
   lockUntil: {
     type: Number,
   },
+  verificationCode: {
+    type: Number,
+  },
   isLocked: {
     type: Boolean,
     default: false,
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
   },
   MFA: {
     type: Boolean,
@@ -95,7 +101,6 @@ const artisansSchema = new Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: Users,
-    required: true,
   },
   businessName: {
     type: String,
@@ -132,28 +137,25 @@ const artisansSchema = new Schema({
     type: String,
     ref: Users,
   },
-});
+} );
 
 artisansSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign(
-    {
+  const token = jwt.sign( {
       _id: this._id,
       type: 'access_token',
-      user: 2,
+      userType: 2,
     },
-    config.get('jwtPrivateKey'),
-    {
+    config.get( 'jwtPrivateKey' ), {
       expiresIn: '3d',
     }
   );
 
-  const refresh_token = jwt.sign(
-    {
+  const refresh_token = jwt.sign( {
       _id: this._id,
       type: 'refresh_token',
+      userType: 2
     },
-    config.get('refreshTokenPrivateKey'),
-    {
+    config.get( 'refreshTokenPrivateKey' ), {
       expiresIn: '7d',
     }
   );
@@ -164,13 +166,11 @@ artisansSchema.methods.generateAuthToken = function () {
 };
 
 artisansSchema.methods.generatePasswordRecoveryToken = function () {
-  const token = jwt.sign(
-    {
+  const token = jwt.sign( {
       _id: this._id,
       type: 'password_recovery',
     },
-    config.get('jwtPrivateKey'),
-    {
+    config.get( 'jwtPrivateKey' ), {
       expiresIn: '5m',
     }
   );
@@ -183,12 +183,24 @@ artisansSchema.methods.generatePassword = function () {
     '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let result = '';
 
-  for (let i = length; i > 0; --i) {
-    result += chars[Math.round(Math.random() * (chars.length - 1))];
+  for ( let i = length; i > 0; --i ) {
+    result += chars[ Math.round( Math.random() * ( chars.length - 1 ) ) ];
   }
   return result;
 };
 
-const Artisans = model('Artisans', artisansSchema, 'artisans');
+artisansSchema.methods.generateCode = function () {
+  const length = 6;
+  const chars =
+    '0123456789';
+  let result = '';
+
+  for ( let i = length; i > 0; --i ) {
+    result += chars[ Math.round( Math.random() * ( chars.length - 1 ) ) ];
+  }
+  return result;
+};
+
+const Artisans = model( 'Artisans', artisansSchema, 'artisans' );
 
 module.exports = Artisans;
