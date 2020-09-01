@@ -2,6 +2,7 @@ const mongoose = require( 'mongoose' );
 const config = require( 'config' );
 const jwt = require( 'jsonwebtoken' );
 const bcrypt = require( 'bcrypt' );
+const Roles = require( './roles' );
 
 const Schema = mongoose.Schema;
 const model = mongoose.model;
@@ -27,6 +28,7 @@ const adminSchema = new Schema( {
   },
   roleId: {
     type: Schema.Types.ObjectId,
+    ref: Roles
   },
   phoneNumber: {
     type: String,
