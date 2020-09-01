@@ -1,11 +1,8 @@
-require( 'module-alias/register' );
-const express = require( 'express' );
-const {
-  BAD_REQUEST,
-  OK,
-} = require( 'http-status-codes' );
+require('module-alias/register');
+const express = require('express');
+const { BAD_REQUEST, OK } = require('http-status-codes');
 
-const logger = require( '../../shared/Logger' );
+const logger = require('../../shared/Logger');
 const {
   paramMissingError,
   singleResponse,
@@ -13,11 +10,11 @@ const {
   paginatedResponse,
   noResult,
   failedRequest,
-} = require( '../../shared/constants' );
+} = require('../../shared/constants');
 
-const Roles = require( '../../database/models/roles' );
-const Authenticator = require( '../../middlewares/auth' );
-const Admin = require( '../../middlewares/isAdmin' );
+const Roles = require('../../database/models/roles');
+const Authenticator = require('../../middlewares/auth');
+const Admin = require('../../middlewares/isAdmin');
 
 //  start
 const router = express.Router();
@@ -49,36 +46,37 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get( '/', [ Authenticator, Admin ], async ( req, res ) => {
+router.get('/', [Authenticator, Admin], async (req, res) => {
   const pagination = {
-    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
-    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
+    page: req.query.page ? parseInt(req.query.page, 10) : 1,
+    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
   };
 
-  const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) : {};
+  const whereCondition = req.query.whereCondition
+    ? JSON.parse(req.query.whereCondition)
+    : {};
 
   try {
-    const roles = await Roles.find( whereCondition )
-      .skip( ( pagination.page - 1 ) * pagination.pageSize )
-      .limit( pagination.pageSize )
-      .sort( {
-        _id: -1
-      } );
-    const total = await Roles.countDocuments( whereCondition );
+    const roles = await Roles.find(whereCondition)
+      .skip((pagination.page - 1) * pagination.pageSize)
+      .limit(pagination.pageSize)
+      .sort({
+        _id: -1,
+      });
+    const total = await Roles.countDocuments(whereCondition);
 
     // Paginated Response
     paginatedResponse.items = roles;
     paginatedResponse.total = total;
 
-    return res.status( OK ).send( paginatedResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(paginatedResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -110,48 +108,42 @@ router.get( '/', [ Authenticator, Admin ], async ( req, res ) => {
  *           - createdBy
  */
 
-router.post( '/create', [ Authenticator, Admin ], async ( req, res ) => {
+router.post('/create', [Authenticator, Admin], async (req, res) => {
   try {
-    const {
-      name,
-      permissions,
-    } = req.body;
+    const { name, permissions } = req.body;
 
-    if (
-      !name ||
-      !permissions
-    ) {
-      return res.status( BAD_REQUEST ).json( paramMissingError );
+    if (!name || !permissions) {
+      return res.status(BAD_REQUEST).json(paramMissingError);
     }
 
     name.trim();
 
-    let role = await Roles.findOne( {
-      name
-    } );
-    if ( role ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    let role = await Roles.findOne({
+      name,
+    });
+    if (role) {
+      return res.status(BAD_REQUEST).json(duplicateEntry);
     }
 
-    role = new Roles( {
+    role = new Roles({
       name,
       permissions,
       createdOn: Date.now(),
-      createdBy: req.user._id
-    } );
+      createdBy: `${req.user.firstname} ${req.user.lastname}`,
+    });
 
     await role.save();
 
     singleResponse.result = role;
 
-    return res.status( OK ).send( singleResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(singleResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -167,27 +159,25 @@ router.post( '/create', [ Authenticator, Admin ], async ( req, res ) => {
  *      required: true
  */
 
-router.get( '/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
-  const {
-    roleId
-  } = req.params;
+router.get('/:roleId', [Authenticator, Admin], async (req, res) => {
+  const { roleId } = req.params;
   try {
-    const role = await Roles.findOne( {
-      _id: roleId
-    } );
-    if ( role ) {
+    const role = await Roles.findOne({
+      _id: roleId,
+    });
+    if (role) {
       singleResponse.result = role;
-      return res.status( OK ).send( singleResponse );
+      return res.status(OK).send(singleResponse);
     } else {
-      return res.status( BAD_REQUEST ).send( noResult );
+      return res.status(BAD_REQUEST).send(noResult);
     }
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -219,45 +209,44 @@ router.get( '/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
  *           - updatedBy
  */
 
-router.put( '/update/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
+router.put('/update/:roleId', [Authenticator, Admin], async (req, res) => {
   try {
-    const {
-      roleId
-    } = req.params;
-    const {
-      name,
-      permissions,
-    } = req.body;
+    const { roleId } = req.params;
+    const { name, permissions } = req.body;
 
-    if ( !name || !permissions )
-      return res.status( BAD_REQUEST ).send( paramMissingError );
+    if (!name || !permissions)
+      return res.status(BAD_REQUEST).send(paramMissingError);
 
-    const role = await Roles.findOneAndUpdate( {
-      _id: roleId
-    }, {
-      $set: {
-        name,
-        permissions,
-        updatedOn: Date.now(),
-        updatedBy: req.user._id
+    const role = await Roles.findOneAndUpdate(
+      {
+        _id: roleId,
       },
-    }, {
-      new: true,
-    } );
+      {
+        $set: {
+          name,
+          permissions,
+          updatedOn: Date.now(),
+          updatedBy: `${req.user.firstname} ${req.user.lastname}`,
+        },
+      },
+      {
+        new: true,
+      }
+    );
 
-    if ( !role ) {
-      return res.status( BAD_REQUEST ).send( failedRequest );
+    if (!role) {
+      return res.status(BAD_REQUEST).send(failedRequest);
     }
 
     singleResponse.result = role;
-    return res.status( OK ).send( singleResponse );
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+    return res.status(OK).send(singleResponse);
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /**
  * @swagger
@@ -273,28 +262,26 @@ router.put( '/update/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
  *      required: true
  */
 
-router.delete( '/delete/:roleId', [ Authenticator, Admin ], async ( req, res ) => {
+router.delete('/delete/:roleId', [Authenticator, Admin], async (req, res) => {
   try {
-    const {
-      roleId
-    } = req.params;
-    const role = await Roles.findOneAndDelete( {
-      _id: roleId
-    } );
+    const { roleId } = req.params;
+    const role = await Roles.findOneAndDelete({
+      _id: roleId,
+    });
 
-    if ( role ) {
+    if (role) {
       singleResponse.result = role;
-      return res.status( OK ).send( singleResponse );
+      return res.status(OK).send(singleResponse);
     } else {
-      return res.status( BAD_REQUEST ).send( singleResponse );
+      return res.status(BAD_REQUEST).send(singleResponse);
     }
-  } catch ( err ) {
-    logger.error( err.message, err );
-    return res.status( BAD_REQUEST ).json( {
+  } catch (err) {
+    logger.error(err.message, err);
+    return res.status(BAD_REQUEST).json({
       error: err.message,
-    } );
+    });
   }
-} );
+});
 
 /******************************************************************************
  *                                     Export

@@ -20,14 +20,12 @@ const rolesSchema = new Schema( {
   },
   createdBy: {
     type: String,
-    ref: Users,
   },
   updateOn: {
     type: Date,
   },
   updatedBy: {
     type: String,
-    ref: Users,
   }
 } );
 
