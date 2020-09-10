@@ -1,8 +1,11 @@
-require('module-alias/register');
-const express = require('express');
-const { BAD_REQUEST, OK } = require('http-status-codes');
+require( 'module-alias/register' );
+const express = require( 'express' );
+const {
+  BAD_REQUEST,
+  OK
+} = require( 'http-status-codes' );
 
-const logger = require('../../shared/Logger');
+const logger = require( '../../shared/Logger' );
 const {
   paramMissingError,
   singleResponse,
@@ -10,11 +13,11 @@ const {
   paginatedResponse,
   noResult,
   failedRequest,
-} = require('../../shared/constants');
+} = require( '../../shared/constants' );
 
-const Jobs = require('../../database/models/jobs');
-const Authenticator = require('../../middlewares/auth');
-const Admin = require('../../middlewares/isAdmin');
+const Jobs = require( '../../database/models/jobs' );
+const Authenticator = require( '../../middlewares/auth' );
+const Admin = require( '../../middlewares/isAdmin' );
 
 //  start
 const router = express.Router();
@@ -47,37 +50,35 @@ const router = express.Router();
  *           - whereCondition
  */
 
-router.get('/all', Authenticator, async (req, res) => {
+router.get( '/all', Authenticator, async ( req, res ) => {
   const pagination = {
-    page: req.query.page ? parseInt(req.query.page, 10) : 1,
-    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition
-    ? JSON.parse(req.query.whereCondition)
-    : {};
+  const whereCondition = req.query.whereCondition ? JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const reviews = await Jobs.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .sort({
+    const reviews = await Jobs.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .sort( {
         _id: -1,
-      });
-    const total = await Jobs.countDocuments(whereCondition);
+      } ).populate( 'categoryId', 'name imageUrl' );
+    const total = await Jobs.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = reviews;
     paginatedResponse.total = total;
 
-    return res.status(OK).send(paginatedResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -107,37 +108,36 @@ router.get('/all', Authenticator, async (req, res) => {
  *           - whereCondition
  */
 
-router.get('/admin/all', [Authenticator, Admin], async (req, res) => {
+router.get( '/admin/all', [ Authenticator, Admin ], async ( req, res ) => {
   const pagination = {
-    page: req.query.page ? parseInt(req.query.page, 10) : 1,
-    pageSize: req.query.pageSize ? parseInt(req.query.pageSize, 10) : 50,
+    page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
+    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition
-    ? JSON.parse(req.query.whereCondition)
-    : {};
+  const whereCondition = req.query.whereCondition ?
+    JSON.parse( req.query.whereCondition ) : {};
 
   try {
-    const jobs = await Jobs.find(whereCondition)
-      .skip((pagination.page - 1) * pagination.pageSize)
-      .limit(pagination.pageSize)
-      .sort({
+    const jobs = await Jobs.find( whereCondition )
+      .skip( ( pagination.page - 1 ) * pagination.pageSize )
+      .limit( pagination.pageSize )
+      .sort( {
         _id: -1,
-      });
-    const total = await Jobs.countDocuments(whereCondition);
+      } ).populate( 'categoryId', 'name imageUrl' );
+    const total = await Jobs.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = jobs;
     paginatedResponse.total = total;
 
-    return res.status(OK).send(paginatedResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( paginatedResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -158,62 +158,59 @@ router.get('/admin/all', [Authenticator, Admin], async (req, res) => {
  *               type: string
  *             description:
  *               type: string
- *             duration:
- *               type: number
- *             artisanId:
+ *             categoryId:
  *               type: string
  *             userId:
- *               type: string
- *             createdOn:
  *               type: string
  *         required:
  *           - title
  *           - description
- *           - duration
- *           - artisanId
+ *           - categoryId
  *           - userId
- *           - createdOn
  */
 
-router.post('/create', async (req, res) => {
+router.post( '/create', async ( req, res ) => {
   try {
-    const { title, description, userId, artisanId, duration } = req.body;
+    const {
+      title,
+      description,
+      userId,
+      categoryId,
+    } = req.body;
 
-    if (!title || !description || !userId || !artisanId || !duration) {
-      return res.status(BAD_REQUEST).json(paramMissingError);
+    if ( !title || !description || !userId || !categoryId ) {
+      return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
     title.trim();
     description.trim();
-    duration.trim();
 
-    let job = await Jobs.findOne({
+    let job = await Jobs.findOne( {
       title,
-    });
-    if (job) {
-      return res.status(BAD_REQUEST).json(duplicateEntry);
+    } );
+    if ( job ) {
+      return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
 
-    job = new Jobs({
+    job = new Jobs( {
       title,
       description,
       userId,
-      artisanId,
-      duration,
-    });
+      categoryId,
+    } );
 
     await job.save();
 
     singleResponse.result = job;
 
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -230,25 +227,27 @@ router.post('/create', async (req, res) => {
  *      required: true
  */
 
-router.get('/:jobId', Authenticator, async (req, res) => {
-  const { jobId } = req.params;
+router.get( '/:jobId', Authenticator, async ( req, res ) => {
+  const {
+    jobId
+  } = req.params;
   try {
-    const job = await Jobs.findOne({
+    const job = await Jobs.findOne( {
       _id: jobId,
-    });
-    if (job) {
+    } ).populate( 'categoryId', 'name imageUrl' ).populate( 'artisanId', 'firstname lastname name' );
+    if ( job ) {
       singleResponse.result = job;
-      return res.status(OK).send(singleResponse);
+      return res.status( OK ).send( singleResponse );
     } else {
-      return res.status(BAD_REQUEST).send(noResult);
+      return res.status( BAD_REQUEST ).send( noResult );
     }
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -269,64 +268,68 @@ router.get('/:jobId', Authenticator, async (req, res) => {
  *               type: string
  *             description:
  *               type: string
- *             duration:
- *               type: number
  *             artisanId:
  *               type: string
  *             userId:
  *               type: string
  *             jobId:
  *               type: string
+ *             categoryId:
+ *               type: string
  *         required:
  *           - title
  *           - description
- *           - duration
  *           - artisanId
  *           - userId
  *           - jobId
+ *           - categoryId
  */
 
-router.put('/update/:jobId', Authenticator, async (req, res) => {
+router.put( '/update/:jobId', Authenticator, async ( req, res ) => {
   try {
-    const { jobId } = req.params;
-    const { title, description, userId, artisanId, duration } = req.body;
+    const {
+      jobId
+    } = req.params;
+    const {
+      title,
+      description,
+      userId,
+      artisanId,
+      categoryId,
+    } = req.body;
 
-    if (!title || !description || !duration || !artisanId)
-      return res.status(BAD_REQUEST).send(paramMissingError);
+    if ( !title || !description || !artisanId || !categoryId )
+      return res.status( BAD_REQUEST ).send( paramMissingError );
 
-    const job = await Jobs.findOneAndUpdate(
-      {
-        _id: jobId,
+    const job = await Jobs.findOneAndUpdate( {
+      _id: jobId,
+    }, {
+      $set: {
+        title,
+        description,
+        userId,
+        artisanId,
+        categoryId,
+        updatedOn: Date.now(),
+        updatedBy: userId,
       },
-      {
-        $set: {
-          title,
-          description,
-          userId,
-          artisanId,
-          duration,
-          updatedOn: Date.now(),
-          updatedBy: userId,
-        },
-      },
-      {
-        new: true,
-      }
-    ).populate('artisanId', 'firstname lastname email phone');
+    }, {
+      new: true,
+    } ).populate( 'artisanId', 'firstname lastname email phone' );
 
-    if (!job) {
-      return res.status(BAD_REQUEST).send(failedRequest);
+    if ( !job ) {
+      return res.status( BAD_REQUEST ).send( failedRequest );
     }
 
     singleResponse.result = job;
-    return res.status(OK).send(singleResponse);
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /**
  * @swagger
@@ -342,26 +345,28 @@ router.put('/update/:jobId', Authenticator, async (req, res) => {
  *      required: true
  */
 
-router.delete('/delete/:jobId', Authenticator, async (req, res) => {
+router.delete( '/delete/:jobId', Authenticator, async ( req, res ) => {
   try {
-    const { jobId } = req.params;
-    const job = await Jobs.findOneAndDelete({
+    const {
+      jobId
+    } = req.params;
+    const job = await Jobs.findOneAndDelete( {
       _id: jobId,
-    });
+    } );
 
-    if (job) {
+    if ( job ) {
       singleResponse.result = job;
-      return res.status(OK).send(singleResponse);
+      return res.status( OK ).send( singleResponse );
     } else {
-      return res.status(BAD_REQUEST).send(singleResponse);
+      return res.status( BAD_REQUEST ).send( singleResponse );
     }
-  } catch (err) {
-    logger.error(err.message, err);
-    return res.status(BAD_REQUEST).json({
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
       error: err.message,
-    });
+    } );
   }
-});
+} );
 
 /******************************************************************************
  *                                     Export

@@ -1,4 +1,3 @@
-'use strict';
 const dotenv = require('dotenv');
 dotenv.config();
 require('express-async-errors');
@@ -17,9 +16,9 @@ const options = require('./src/swagger/swagger.json');
 const swaggerDocs = swaggerJsDoc(options);
 /* database */
 require('./src/database');
-require('./src/utils/envErrorHandler')
-require('./src/utils/exceptionHandler')
-require('./src/utils/rejectionHandler')
+require('./src/utils/envErrorHandler');
+require('./src/utils/exceptionHandler');
+require('./src/utils/rejectionHandler');
 
 const app = express();
 

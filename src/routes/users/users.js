@@ -719,6 +719,7 @@ router.post( '/email-confirmation', Authenticator, async ( req, res ) => {
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
     delete userToken.permissions;
+    delete userToken.password;
 
     userToken.user = {
       firstname: user.firstname,
@@ -731,6 +732,7 @@ router.post( '/email-confirmation', Authenticator, async ( req, res ) => {
       address: user.address,
       imageUrl: user.imageUrl,
       createdOn: user.createdOn,
+      userType: user.userTYpe
     };
 
     // send email to user

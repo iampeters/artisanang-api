@@ -15,19 +15,23 @@ const jobsSchema = new Schema( {
     type: String,
     required: true,
   },
-  category: {
+  status: {
+    type: String,
+    enum: ['NEW', 'ASSIGNED'],
+    default: 'NEW'
+  },
+  categoryId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: Category,
   },
   artisanId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: Users,
-    required: true
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: Users,
-    required: true
+    required: [true, "UserId is required"]
   },
   budget: {
     type: Number,
@@ -38,7 +42,6 @@ const jobsSchema = new Schema( {
   },
   updateOn: {
     type: Date,
-    default: null
   },
   updatedBy: {
     type: String,

@@ -10,6 +10,7 @@ const {
   userToken,
   paramMissingError,
   failedRequest,
+  duplicateEntry,
 } = require( '../../shared/constants' );
 const encrypt = require( '../../security/encrypt' );
 const Mailer = require( '../../engine/mailer' );

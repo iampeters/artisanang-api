@@ -16,7 +16,7 @@ const {
 } = require( '../../shared/constants' );
 
 const Reviews = require( '../../database/models/reviews' );
-const Artisan = require( '../../database/models/artisans' );
+const Users = require( '../../database/models/users' );
 const Authenticator = require( '../../middlewares/auth' );
 const Admin = require( '../../middlewares/isAdmin' );
 
@@ -215,6 +215,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       userId,
       artisanId,
       rating,
+      createdBy: req.user._id
     } );
 
     await review.save();
@@ -272,7 +273,7 @@ router.post( '/create', Authenticator, async ( req, res ) => {
 
     calculatedRating = calcRating();
 
-    const user = await Artisan.findOneAndUpdate( {
+    const user = await Users.findOneAndUpdate( {
       _id: artisanId
     }, {
       $set: {

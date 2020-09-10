@@ -126,6 +126,9 @@ const userSchema = new Schema( {
   guarantorPhoneNumber: {
     type: String,
   },
+  guarantorAddress: {
+    type: String,
+  },
   businessName: {
     type: String,
     unique: true,

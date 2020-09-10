@@ -24,6 +24,8 @@ const Authenticator = require( '../../middlewares/auth' );
 const encrypt = require( '../../security/encrypt' );
 const Mailer = require( '../../engine/mailer' );
 const isAdmin = require( '../../middlewares/isAdmin' );
+const generatePassword = require( '../../utils/passwordGenerator' );
+const codeGenerator = require( '../../utils/codeGenerator' );
 
 //  start
 const router = express.Router();
@@ -137,6 +139,11 @@ router.get( '/admin/all', Authenticator, async ( req, res ) => {
 
   whereCondition.userType = 2;
 
+  if ( whereCondition.name ) {
+    whereCondition.name.trim();
+    whereCondition.name = RegExp( whereCondition.name, 'gi' );
+  }
+
 
   try {
     const users = await Users.find( whereCondition )
@@ -203,6 +210,173 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
+ * /api/artisans/onboardArtisan:
+ *   post:
+ *     tags:
+ *       - Artisans
+ *     name: OnboardArtisan
+ *     summary: Onboard artisan by user
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             firstname:
+ *               type: string
+ *             lastname:
+ *               type: string
+ *             email:
+ *               type: string
+ *               format: email
+ *             phoneNumber:
+ *               type: string
+ *             categoryId:
+ *               type: string
+ *             RCNumber:
+ *               type: string
+ *             businessName:
+ *               type: string
+ *             imageUrl:
+ *               type: string
+ *             address:
+ *               type: string
+ *             state:
+ *               type: string
+ *             country:
+ *               type: string
+ *         required:
+ *           - firstname
+ *           - lastname
+ *           - email
+ *           - phoneNumber
+ *           - categoryId
+ *           - categoryId
+ *           - imageUrl
+ *           - address
+ *           - state
+ *           - country
+ */
+
+router.post( '/onboardArtisan', Authenticator, async ( req, res ) => {
+  try {
+    const {
+      firstname,
+      lastname,
+      email,
+      phoneNumber,
+      categoryId,
+      address,
+      businessName,
+      RCNumber,
+      imageUrl,
+      state,
+      country,
+      createdBy
+    } = req.body;
+
+    if ( !firstname || !lastname || !email || !phoneNumber || !categoryId || !state || !country ||!address ) {
+      return res.status( BAD_REQUEST ).json( paramMissingError );
+    }
+
+    firstname.trim();
+    lastname.trim();
+    phoneNumber.trim();
+    req.body.email.toLowerCase();
+
+    let user = await Users.findOne( {
+      email,
+    } );
+    if ( user ) {
+      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    }
+
+    const phone = await Users.findOne( {
+      phoneNumber,
+    } );
+    if ( phone ) {
+      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    }
+    let password = await generatePassword( 8 );
+
+    const hash = await encrypt( password );
+    if ( !hash ) return res.status( BAD_REQUEST ).json( badRequest );
+
+    const code = await codeGenerator();
+    if ( !code ) return res.status( BAD_REQUEST ).json( badRequest );
+
+    user = new Users( {
+      firstname: firstname,
+      lastname: lastname,
+      address: address,
+      phoneNumber: phoneNumber,
+      email: email,
+      imageUrl: imageUrl,
+      categoryId: categoryId,
+      businessName: businessName,
+      RCNumber: RCNumber,
+      state: state,
+      country: country,
+      name: `${firstname} ${lastname}`,
+      password: hash,
+      verificationCode: code,
+      userType: 2,
+      createdBy
+    } );
+
+    const token = await user.generateAuthToken();
+    if ( !token ) return res.status( BAD_REQUEST ).json( failedRequest );
+
+    await user.save();
+
+    userToken.result = {
+      firstname: user.firstname,
+      lastname: user.lastname,
+      _id: user._id,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      address: user.address,
+      imageUrl: user.imageUrl,
+      categoryId: user.categoryId,
+      userId: user.userId,
+      businessName: user.userId,
+      RCNumber: user.userId,
+      NIN: user.userId,
+      state: user.state,
+      country: user.country,
+      userType: user.userType,
+    };
+
+    // TODO - send onboard email to artisan
+    Mailer(
+      ` 
+      <h3>Hello ${user.firstname},</h3>
+      <h5>You’re almost there. Confirm your account below to finish creating your ArtisanaNG account.</h5>
+      <p>Click this link to verify your email https://artisana.ng/onboarding/confirmation/${user.email}/${token.token}/${code}</p>
+      
+      <h4>Email: ${user.email}</h4>
+      <h4>Password: ${password}</h4>
+      `,
+      user.email,
+      'Your Registration at ArtisanaNG 🎉',
+      ( err ) => {
+        logger.error( err.message, err );
+      }
+    );
+
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+/**
+ * @swagger
  * /api/artisans/create:
  *   post:
  *     tags:
@@ -236,7 +410,7 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
  *           - password
  */
 
-router.post( '/create', Authenticator, async ( req, res ) => {
+router.post( '/create', async ( req, res ) => {
   try {
     const {
       firstname,
@@ -244,10 +418,11 @@ router.post( '/create', Authenticator, async ( req, res ) => {
       email,
       phoneNumber,
       password,
+      userType,
       createdBy
     } = req.body;
 
-    if ( !firstname || !lastname || !email || !phoneNumber || !password ) {
+    if ( !firstname || !lastname || !email || !phoneNumber || !password || !userType) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
@@ -271,27 +446,20 @@ router.post( '/create', Authenticator, async ( req, res ) => {
     }
 
     const hash = await encrypt( password );
-    req.body.password = hash;
+    if ( !hash ) return res.status( BAD_REQUEST ).json( badRequest );
 
-    const code = await user.generateCode();
+    const code = await codeGenerator();
+    if ( !code ) return res.status( BAD_REQUEST ).json( badRequest );
 
     user = new Users( {
-      firstname,
-      lastname,
-      address,
-      phoneNumber,
-      email,
-      imageUrl,
-      category,
-      businessName,
-      RCNumber,
-      NIN,
-      state,
-      country,
+      firstname: firstname,
+      lastname: lastname,
+      phoneNumber: phoneNumber,
+      email: email,
       name: `${firstname} ${lastname}`,
-      password: req.body.password,
+      password: hash,
       verificationCode: code,
-      userType: 2,
+      userType,
       createdBy
     } );
 
@@ -300,29 +468,25 @@ router.post( '/create', Authenticator, async ( req, res ) => {
 
     await user.save();
 
-    userToken.result = {
+    singleResponse.result = {
       firstname: user.firstname,
       lastname: user.lastname,
       _id: user._id,
       email: user.email,
-      phoneNumber: user.phoneNumber,
-      address: user.address,
-      imageUrl: user.imageUrl,
-      category: user.category,
-      userId: user.userId,
-      businessName: user.userId,
-      RCNumber: user.userId,
-      NIN: user.userId,
-      state: user.state,
-      country: user.country,
-      userType: user.userType,
     };
 
     // TODO - send onboard email to artisan
     Mailer(
-      `Welcome to Artisana, Click this link to verify your email https://artisana.ng/onboarding/confirmation/${user.email}/${token}/${code}`,
+      ` 
+      <h3>Hello ${user.firstname},</h3>
+      <h5>You’re almost there. Confirm your account below to finish creating your ArtisanaNG account.</h5>
+      <p>Click this link to verify your email https://artisana.ng/onboarding/confirmation/${user.email}/${token.token}/${code}</p>
+      
+      <h4>Email: ${user.email}</h4>
+      <h4>Password: ${password}</h4>
+      `,
       user.email,
-      'Welcome to Artisana 🎉',
+      'Your Registration at ArtisanaNG 🎉',
       ( err ) => {
         logger.error( err.message, err );
       }
@@ -401,7 +565,7 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
  *               type: string
  *             address:
  *               type: string
- *             category:
+ *             categoryId:
  *               type: string
  *             imageUrl:
  *               type: string
@@ -439,7 +603,7 @@ router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
       phoneNumber,
       imageUrl,
       address,
-      category,
+      categoryId,
       businessName,
       RCNumber,
       NIN,
@@ -454,7 +618,7 @@ router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
 
     address && address.trim();
     phoneNumber && phoneNumber.trim();
-    category && category.trim();
+    categoryId && categoryId.trim();
     businessName && businessName.trim();
     RCNumber && RCNumber.trim();
     NIN && NIN.trim();
@@ -465,8 +629,6 @@ router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
       !artisanId ||
       !email ||
       !phoneNumber ||
-      !address ||
-      !category ||
       !state ||
       !country
     )
@@ -503,8 +665,8 @@ router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
         phoneNumber,
         imageUrl,
         address,
-        category,
-        updatedOn: new Date.now(),
+        categoryId,
+        updatedOn: Date.now(),
         updatedBy: artisanId,
         businessName,
         NIN,
@@ -537,6 +699,202 @@ router.put( '/update/:artisanId', Authenticator, async ( req, res ) => {
     } );
   }
 } );
+
+
+/**
+ * @swagger
+ * /api/artisans/update/businessInformation/{artisanId}:
+ *   put:
+ *     tags:
+ *       - Artisans
+ *     name: Update
+ *     summary: Update a artisan
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             categoryId:
+ *               type: string
+ *             businessName:
+ *               type: string
+ *             RCNumber:
+ *               type: string
+ *             NIN:
+ *               type: string
+ *             website:
+ *               type: string
+ *             description:
+ *               type: string
+ *             experience:
+ *               type: string
+ */
+
+router.put( '/update/businessInformation/:artisanId', Authenticator, async ( req, res ) => {
+  try {
+    const {
+      artisanId
+    } = req.params;
+    const {
+      categoryId,
+      businessName,
+      RCNumber,
+      NIN,
+      experience,
+      website,
+      description,
+    } = req.body;
+
+    categoryId && categoryId.trim();
+    businessName && businessName.trim();
+    RCNumber && RCNumber.trim();
+    NIN && NIN.trim();
+
+    if (
+      !categoryId ||
+      !experience ||
+      !businessName ||
+      !description
+    )
+      return res.status( BAD_REQUEST ).send( paramMissingError );
+
+    if ( NIN ) {
+      const nin = await Users.findOne( {
+        NIN,
+      } );
+      if ( nin ) return res.status( BAD_REQUEST ).json( duplicateEntry );
+    }
+
+    if ( RCNumber ) {
+      const rcNumber = await Users.findOne( {
+        RCNumber,
+      } );
+      if ( rcNumber ) return res.status( BAD_REQUEST ).json( duplicateEntry );
+    }
+
+    const user = await Users.findOneAndUpdate( {
+      _id: artisanId,
+    }, {
+      $set: {
+        categoryId,
+        updatedOn: Date.now(),
+        updatedBy: artisanId,
+        businessName,
+        NIN,
+        RCNumber,
+        experience,
+        website,
+        description,
+      },
+    }, {
+      new: true,
+    } ).select( {
+      password: 0,
+      __v: 0,
+    } );
+
+    if ( !user ) {
+      return res.status( BAD_REQUEST ).send( failedRequest );
+    }
+
+    singleResponse.result = user;
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+/**
+ * @swagger
+ * /api/artisans/update/nextOfKin/{artisanId}:
+ *   put:
+ *     tags:
+ *       - Artisans
+ *     name: Update
+ *     summary: Update a artisan
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             guarantor:
+ *               type: string
+ *             guarantorPhoneNumber:
+ *               type: string
+ *             guarantorAddress:
+ *               type: string
+ */
+
+router.put( '/update/nextOfKin/:artisanId', Authenticator, async ( req, res ) => {
+  try {
+    const {
+      artisanId
+    } = req.params;
+    const {
+      guarantor,
+      guarantorPhoneNumber,
+      guarantorAddress
+    } = req.body;
+
+    guarantorAddress && guarantorAddress.trim();
+    guarantor && guarantor.trim();
+
+    if (
+      !guarantorAddress ||
+      !guarantor ||
+      !guarantorPhoneNumber
+    )
+      return res.status( BAD_REQUEST ).send( paramMissingError );
+
+    const user = await Users.findOneAndUpdate( {
+      _id: artisanId,
+    }, {
+      $set: {
+        guarantor,
+        updatedOn: Date.now(),
+        updatedBy: artisanId,
+        guarantorAddress,
+        guarantorPhoneNumber,
+      },
+    }, {
+      new: true,
+    } ).select( {
+      password: 0,
+      __v: 0,
+    } ).populate('categoryId', 'name imageUrl');
+
+    if ( !user ) {
+      return res.status( BAD_REQUEST ).send( failedRequest );
+    }
+
+    const token = await user.generateAuthToken();
+    if (!token) return res.status(BAD_REQUEST).json(failedRequest);
+
+
+    userToken.token = token.token;
+    userToken.refresh_token = token.refresh_token;
+    delete userToken.permissions;
+
+    userToken.user = user;
+
+    return res.status( OK ).send( userToken );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
 
 /**
  * @swagger
@@ -783,13 +1141,14 @@ router.post( '/email-confirmation', Authenticator, async ( req, res ) => {
       address: user.address,
       imageUrl: user.imageUrl,
       createdOn: user.createdOn,
-      category: user.category,
+      categoryId: user.categoryId,
       userId: user.userId,
       businessName: user.userId,
       RCNumber: user.userId,
       NIN: user.userId,
       state: user.state,
       country: user.country,
+      userType: user.userType
     };
 
     // send email to user
@@ -836,7 +1195,7 @@ router.post( '/email-confirmation', Authenticator, async ( req, res ) => {
  *               format: email
  */
 
-router.post( '/verify-email', Authenticator, async ( req, res ) => {
+router.post( '/verify-email', async ( req, res ) => {
   try {
     const {
       email,

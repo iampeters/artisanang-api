@@ -52,13 +52,18 @@ const router = express.Router();
 router.get( '/', Authenticator, async ( req, res ) => {
   const pagination = {
     page: req.query.page ? parseInt( req.query.page, 10 ) : 1,
-    pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
+    pageSize: req.query.pageSize > 0 ? parseInt( req.query.pageSize, 10 ) : 1000,
   };
 
   const whereCondition = req.query.whereCondition ?
     JSON.parse( req.query.whereCondition ) : {};
 
   whereCondition.isActive = true;
+
+  if ( whereCondition.name ) {
+    whereCondition.name.trim();
+    whereCondition.name = RegExp( whereCondition.name, 'gi' );
+  }
 
   try {
     const category = await Category.find( whereCondition )
@@ -118,13 +123,18 @@ router.get( '/admin', [ Authenticator, isAdmin ], async ( req, res ) => {
   const whereCondition = req.query.whereCondition ?
     JSON.parse( req.query.whereCondition ) : {};
 
+  if ( whereCondition.name ) {
+    whereCondition.name.trim();
+    whereCondition.name = RegExp( whereCondition.name, 'gi' );
+  }
+
   try {
     const category = await Category.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .sort( {
         name: 1
-      } );
+      } ).populate( 'createdBy', 'firstname lastname' );
     const total = await Category.countDocuments( whereCondition );
 
     // Paginated Response

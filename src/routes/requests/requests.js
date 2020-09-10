@@ -10,6 +10,7 @@ const {
   paramMissingError,
   singleResponse,
   paginatedResponse,
+  noResult,
 } = require( '../../shared/constants' );
 
 const Requests = require( '../../database/models/request' );
@@ -147,6 +148,44 @@ router.get( '/admin/all', [ Authenticator, isAdmin ], async ( req, res ) => {
 
 /**
  * @swagger
+ * /api/requests/{requestId}:
+ *  get:
+ *   summary: Get job details
+ *   tags:
+ *     - Requests
+ *   parameters:
+ *    - in: path
+ *      name: requestId
+ *      schema:
+ *       type: string
+ *      required: true
+ */
+
+router.get( '/:requestId', Authenticator, async ( req, res ) => {
+  const {
+    jobId
+  } = req.params;
+  try {
+    const job = await Requests.findOne( {
+      _id: jobId,
+    } );
+    if ( job ) {
+      singleResponse.result = job;
+      return res.status( OK ).send( singleResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( noResult );
+    }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+
+/**
+ * @swagger
  * /api/requests/create:
  *   post:
  *     tags:
@@ -187,6 +226,7 @@ router.post( '/create', async ( req, res ) => {
         jobId,
         userId,
         artisanId,
+        status: 'NEW'
       } )
       .populate( 'artisanId', 'email' )
       .populate( 'jobId', 'title description' );
@@ -241,7 +281,7 @@ router.put( '/accept/:requestId', async ( req, res ) => {
         _id: requestId,
       }, {
         $set: {
-          status: 'ASSIGNED',
+          status: 'ACCEPTED',
           updatedOn: Date.now(),
           updatedBy: req.user._id,
         },

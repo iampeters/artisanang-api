@@ -33,6 +33,9 @@ const reviewsSchema = new Schema( {
     type: Date,
     default: Date.now
   },
+  createdBy: {
+    type: String,
+  },
   updateOn: {
     type: Date,
     default: null
