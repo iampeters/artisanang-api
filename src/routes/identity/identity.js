@@ -80,8 +80,6 @@ router.post( '/token', async ( req, res ) => {
     const user = await Users.findOne( {
       email,
     } ).select( {
-      lockUntil: 0,
-      loginAttempts: 0,
       verificationCode: 0,
     } );
     if ( !user ) return res.status( BAD_REQUEST ).json( invalidCredentials );
