@@ -84,7 +84,7 @@ router.post( '/token', async ( req, res ) => {
     } );
     if ( !user ) return res.status( BAD_REQUEST ).json( invalidCredentials );
 
-    if ( !user.isActive ) return res.status( BAD_REQUEST ).json( accountBlocked );
+    // if ( !user.isActive ) return res.status( BAD_REQUEST ).json( accountBlocked );
 
     const isPasswordValid = await decrypt( password, user.password );
     if ( !isPasswordValid ) {
