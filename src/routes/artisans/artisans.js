@@ -193,7 +193,11 @@ router.get( '/:artisanId', Authenticator, async ( req, res ) => {
   try {
     const user = await Users.findOne( {
       _id: artisanId,
-    } );
+    } ).select({
+      password: 0,
+      verificationCode:0,
+      loginAttempts:0
+    }).populate('categoryId', 'name');
     if ( user ) {
       singleResponse.result = user;
       return res.status( OK ).send( singleResponse );
