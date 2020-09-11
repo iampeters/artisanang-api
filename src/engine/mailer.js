@@ -31,7 +31,7 @@
 // };
 
 const sgMail = require( '@sendgrid/mail' );
-sgMail.setApiKey( process.env.SENDGRID_API_KEY );
+sgMail.setApiKey( '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' );
 
 module.exports = async ( message, email, subject, callback ) => {
 
