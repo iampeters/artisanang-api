@@ -65,7 +65,7 @@ router.post( '/auth', async ( req, res ) => {
       userType
     } = req.body;
 
-    if ( !firstname || !lastname || !email|| !userType ) {
+    if ( !firstname || !lastname || !email ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
