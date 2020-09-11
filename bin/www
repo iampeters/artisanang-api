@@ -5,9 +5,9 @@
  */
 const server = require('../app');
 const debug = require('debug')('app:startup');
-const http = require('http');
-const numCPUs = require('os').cpus().length;
-const cluster = require('cluster');
+// const http = require('http');
+// const numCPUs = require('os').cpus().length;
+// const cluster = require('cluster');
 
 /**
  * Get port from environment and store in Express.
