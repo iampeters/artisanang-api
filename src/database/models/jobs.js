@@ -17,19 +17,19 @@ const jobsSchema = new Schema( {
   },
   status: {
     type: String,
-    enum: ['NEW', 'ASSIGNED'],
+    enum: [ 'NEW', 'ASSIGNED', 'PENDING' ],
     default: 'NEW'
   },
   categoryId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: Category,
   },
   artisanId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: Users,
   },
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: Users,
     required: [true, "UserId is required"]
   },

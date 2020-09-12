@@ -11,12 +11,15 @@ const {
   singleResponse,
   paginatedResponse,
   noResult,
+  failedRequest,
 } = require( '../../shared/constants' );
 
 const Requests = require( '../../database/models/request' );
 const Authenticator = require( '../../middlewares/auth' );
 const isAdmin = require( '../../middlewares/isAdmin' );
 const Mailer = require( '../../engine/mailer' );
+const Jobs = require( '../../database/models/jobs' );
+const Users = require( '../../database/models/users' );
 
 //  start
 const router = express.Router();
@@ -227,16 +230,32 @@ router.post( '/create', async ( req, res ) => {
         userId,
         artisanId,
         status: 'NEW'
-      } )
-      .populate( 'artisanId', 'email' )
-      .populate( 'jobId', 'title description' );
+      } ).populate( 'artisanId', 'email' ).populate( 'jobId', 'title description' );
 
     await request.save();
+
+    const job = await Jobs.findOneAndUpdate( {
+      _id: jobId
+    }, {
+      $set: {
+        status: 'PENDING',
+      }
+    } ).populate( 'artisanId', 'email' ).populate( 'jobId', 'title description' );
+
+    if ( !job ) return res.status( OK ).send( failedRequest );
+
+    const artisan = await Users.findOne( {
+      _id: artisanId
+    } );
+
+    // let user = await Users.findOne({
+    //   _id: userId
+    // });
 
     // TODO - send email to artisan
     Mailer(
       'You have a new job request',
-      request.artisanId.email,
+      artisan.email,
       'New Job Request 🎉',
       ( err ) => {
         logger.error( err.message, err );
