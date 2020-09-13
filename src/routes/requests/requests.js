@@ -58,8 +58,7 @@ router.get( '/all', Authenticator, async ( req, res ) => {
     pageSize: req.query.pageSize ? parseInt( req.query.pageSize, 10 ) : 50,
   };
 
-  const whereCondition = req.query.whereCondition ?
-    JSON.parse( req.query.whereCondition ) : {};
+  const whereCondition = req.query.whereCondition ? JSON.parse( req.query.whereCondition ) : {};
 
   try {
     const requests = await Requests.find( whereCondition )
@@ -166,12 +165,13 @@ router.get( '/admin/all', [ Authenticator, isAdmin ], async ( req, res ) => {
 
 router.get( '/:requestId', Authenticator, async ( req, res ) => {
   const {
-    jobId
+    requestId
   } = req.params;
   try {
     const job = await Requests.findOne( {
-      _id: jobId,
-    } );
+        _id: requestId,
+        } ).populate( 'jobId', 'title description' )
+          .populate( 'userId', 'firstname lastname imageUrl' ).populate( 'categoryId', 'name imageUrl' );
     if ( job ) {
       singleResponse.result = job;
       return res.status( OK ).send( singleResponse );
@@ -214,7 +214,7 @@ router.get( '/:requestId', Authenticator, async ( req, res ) => {
  *           - userId
  */
 
-router.post( '/create', async ( req, res ) => {
+router.post( '/create', Authenticator, async ( req, res ) => {
   try {
     const {
       jobId,
@@ -226,11 +226,11 @@ router.post( '/create', async ( req, res ) => {
       return res.status( BAD_REQUEST ).json( paramMissingError );
 
     const request = new Requests( {
-        jobId,
-        userId,
-        artisanId,
-        status: 'NEW'
-      } ).populate( 'artisanId', 'email' ).populate( 'jobId', 'title description' );
+      jobId,
+      userId,
+      artisanId,
+      status: 'NEW'
+    } ).populate( 'artisanId', 'email' ).populate( 'jobId', 'title description' );
 
     await request.save();
 
@@ -239,6 +239,8 @@ router.post( '/create', async ( req, res ) => {
     }, {
       $set: {
         status: 'PENDING',
+        updatedOn: Date.now(),
+          updatedBy: req.user._id,
       }
     } ).populate( 'artisanId', 'email' ).populate( 'jobId', 'title description' );
 
@@ -247,11 +249,6 @@ router.post( '/create', async ( req, res ) => {
     const artisan = await Users.findOne( {
       _id: artisanId
     } );
-
-    // let user = await Users.findOne({
-    //   _id: userId
-    // });
-
     // TODO - send email to artisan
     Mailer(
       'You have a new job request',
@@ -288,7 +285,7 @@ router.post( '/create', async ( req, res ) => {
  *      required: true
  */
 
-router.put( '/accept/:requestId', async ( req, res ) => {
+router.put( '/accept/:requestId', Authenticator, async ( req, res ) => {
   try {
     const {
       requestId
@@ -296,7 +293,7 @@ router.put( '/accept/:requestId', async ( req, res ) => {
 
     if ( !requestId ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const request = Requests.findOneAndUpdate( {
+    const jobRequest = await Requests.findOneAndUpdate( {
         _id: requestId,
       }, {
         $set: {
@@ -308,22 +305,32 @@ router.put( '/accept/:requestId', async ( req, res ) => {
         new: true,
       } )
       .populate( 'artisanId', 'email' )
-      .populate( 'userId', 'title description' )
+      .populate( 'userId', 'firstname lastname email' )
       .populate( 'jobId', 'title description' );
+  
 
-    await request.save();
+    const job = await Jobs.findOneAndUpdate( {
+      _id: jobRequest.jobId._id
+    }, {
+      $set: {
+        status: 'ASSIGNED',
+        artisanId: req.user._id
+      }
+    } );
+
+    if ( !job ) return res.status( OK ).send( failedRequest );
 
     // TODO - send email to artisan
     Mailer(
       'Your job request has been accepted',
-      request.userId.email,
+      jobRequest.userId.email,
       'Job Request Accepted 🎉',
       ( err ) => {
         logger.error( err.message, err );
       }
     );
 
-    singleResponse.result = request;
+    singleResponse.result = jobRequest;
 
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
@@ -349,7 +356,7 @@ router.put( '/accept/:requestId', async ( req, res ) => {
  *      required: true
  */
 
-router.put( '/reject/:requestId', async ( req, res ) => {
+router.put( '/reject/:requestId', Authenticator, async ( req, res ) => {
   try {
     const {
       requestId
@@ -357,7 +364,7 @@ router.put( '/reject/:requestId', async ( req, res ) => {
 
     if ( !requestId ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const request = Requests.findOneAndUpdate( {
+    const request = await Requests.findOneAndUpdate( {
         _id: requestId,
       }, {
         $set: {
@@ -369,10 +376,18 @@ router.put( '/reject/:requestId', async ( req, res ) => {
         new: true,
       } )
       .populate( 'artisanId', 'email' )
-      .populate( 'userId', 'title description' )
+      .populate( 'userId', 'firstname lastname email' )
       .populate( 'jobId', 'title description' );
 
-    await request.save();
+      const job = await Jobs.findOneAndUpdate( {
+        _id: request.jobId._id
+      }, {
+        $set: {
+          status: 'NEW',
+        }
+      } );
+
+      if ( !job ) return res.status( OK ).send( failedRequest );
 
     // TODO - send email to artisan
     Mailer(
@@ -410,7 +425,7 @@ router.put( '/reject/:requestId', async ( req, res ) => {
  *      required: true
  */
 
-router.put( '/cancel/:requestId', async ( req, res ) => {
+router.put( '/cancel/:requestId', Authenticator, async ( req, res ) => {
   try {
     const {
       requestId
@@ -418,7 +433,7 @@ router.put( '/cancel/:requestId', async ( req, res ) => {
 
     if ( !requestId ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const request = Requests.findOneAndUpdate( {
+    const request = await Requests.findOneAndUpdate( {
         _id: requestId,
       }, {
         $set: {
@@ -430,11 +445,8 @@ router.put( '/cancel/:requestId', async ( req, res ) => {
         new: true,
       } )
       .populate( 'artisanId', 'email' )
-      .populate( 'userId', 'title description' )
+      .populate( 'userId', 'firstname lastname email' )
       .populate( 'jobId', 'title description' );
-
-    await request.save();
-
     // TODO - send email to artisan
     Mailer(
       'Your job request has been canceled',

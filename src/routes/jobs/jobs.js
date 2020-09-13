@@ -58,8 +58,13 @@ router.get( '/all', Authenticator, async ( req, res ) => {
 
   const whereCondition = req.query.whereCondition ? JSON.parse( req.query.whereCondition ) : {};
 
+  if ( whereCondition.title ) {
+    whereCondition.title.trim();
+    whereCondition.title = RegExp( whereCondition.title, 'gi' );
+  }
+
   try {
-    const reviews = await Jobs.find( whereCondition )
+    const jobs = await Jobs.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .sort( {
@@ -68,7 +73,7 @@ router.get( '/all', Authenticator, async ( req, res ) => {
     const total = await Jobs.countDocuments( whereCondition );
 
     // Paginated Response
-    paginatedResponse.items = reviews;
+    paginatedResponse.items = jobs;
     paginatedResponse.total = total;
 
     return res.status( OK ).send( paginatedResponse );
@@ -116,6 +121,11 @@ router.get( '/admin/all', [ Authenticator, Admin ], async ( req, res ) => {
 
   const whereCondition = req.query.whereCondition ?
     JSON.parse( req.query.whereCondition ) : {};
+  
+    if ( whereCondition.title ) {
+      whereCondition.title.trim();
+      whereCondition.title = RegExp( whereCondition.title, 'gi' );
+    }
 
   try {
     const jobs = await Jobs.find( whereCondition )
@@ -234,7 +244,7 @@ router.get( '/:jobId', Authenticator, async ( req, res ) => {
   try {
     const job = await Jobs.findOne( {
       _id: jobId,
-    } ).populate( 'categoryId', 'name imageUrl' ).populate( 'artisanId', 'firstname lastname name' );
+    } ).populate( 'categoryId', 'name imageUrl' ).populate( 'artisanId', 'firstname lastname name imageUrl' );
     if ( job ) {
       singleResponse.result = job;
       return res.status( OK ).send( singleResponse );

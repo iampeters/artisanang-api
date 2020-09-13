@@ -38,12 +38,12 @@ const Authenticator = async (req, res, next) => {
     req.user = payload;
     next();
   } catch (ex) {
-    return res.status(FORBIDDEN).json({
+    return res.status( FORBIDDEN ).json( {
       hasErrors: true,
       hasResults: false,
       successful: false,
       message: ex.message,
-    })
+    } );
   }
 };
 

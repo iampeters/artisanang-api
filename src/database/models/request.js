@@ -21,6 +21,9 @@ const requestSchema = new Schema({
     ref: Users,
     required: true,
   },
+  rejectionReason: {
+    type: String,
+  },
   status: {
     type: String,
     enum: ['NEW', 'ACCEPTED', 'DECLINED', 'CANCELED'],
