@@ -732,7 +732,7 @@ router.post( '/email-confirmation', Authenticator, async ( req, res ) => {
       address: user.address,
       imageUrl: user.imageUrl,
       createdOn: user.createdOn,
-      userType: user.userTYpe
+      userType: user.userType
     };
 
     // send email to user
