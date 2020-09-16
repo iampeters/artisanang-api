@@ -368,7 +368,7 @@ router.post( '/create', async ( req, res ) => {
     // send onboarding email
     // send email to user
     await Mailer(
-      `Welcome to Artisana, Click this link to verify your email https://artisana.ng/onboarding/email-confirmation/${user.email}/${token.token}/${code}`,
+      `Welcome to Artisana, Click this link to verify your email https://app.artisana.ng/onboarding/email-confirmation/${user.email}/${token.token}/${code}`,
       user.email,
       'Welcome to Artisana 🎉',
       ( err ) => {
@@ -811,7 +811,7 @@ router.post( '/verify-email', Authenticator, async ( req, res ) => {
 
     if ( user ) {
       await Mailer(
-        `Hello ${user.firstname}, Click this link to verify your email https://artisana.ng/onboarding/email-confirmation/${user.email}/${token.token}/${code}`,
+        `Hello ${user.firstname}, Click this link to verify your email https://app.artisana.ng/onboarding/email-confirmation/${user.email}/${token.token}/${code}`,
         user.email,
         'Verify your email 🎉',
         ( err ) => {
