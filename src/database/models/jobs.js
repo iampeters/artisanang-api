@@ -17,7 +17,7 @@ const jobsSchema = new Schema( {
   },
   status: {
     type: String,
-    enum: [ 'NEW', 'ASSIGNED', 'PENDING' ],
+    enum: [ 'NEW', 'ASSIGNED', 'PENDING', 'COMPLETED' ],
     default: 'NEW'
   },
   categoryId: {
