@@ -868,6 +868,7 @@ router.put( '/update/nextOfKin/:artisanId', Authenticator, async ( req, res ) =>
         updatedBy: artisanId,
         guarantorAddress,
         guarantorPhoneNumber,
+        hasOnboarded: true
       },
     }, {
       new: true,

@@ -52,6 +52,10 @@ const userSchema = new Schema( {
     type: Boolean,
     default: false
   },
+  hasOnboarded: {
+    type: Boolean,
+    default: false
+  },
   verificationCode: {
     type: Number,
   },

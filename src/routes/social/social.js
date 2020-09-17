@@ -94,18 +94,8 @@ router.post( '/auth', async ( req, res ) => {
       userToken.token = token.token;
       userToken.refresh_token = token.refresh_token;
       delete userToken.permissions;
-      userToken.user = {
-        firstname: user.firstname,
-        lastname: user.lastname,
-        username: user.username,
-        lastLogin: user.lastLogin,
-        _id: user._id,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        address: user.address,
-        imageUrl: user.imageUrl,
-        userType: user.userType,
-      };
+      userToken.user = user;
+      delete userToken.user.password;
 
       // send email to user
       await Mailer(
