@@ -68,12 +68,14 @@ router.post( '/fileUpload', Authenticator, async ( req, res ) => {
 router.get( '/artisan/dashboard', Authenticator, async ( req, res ) => {
  
   try {
-    const jobs = await Jobs.countDocuments( {artisanId: req.user._id} );
+    const jobs = await Jobs.countDocuments( {artisanId: req.user._id, status: 'ASSIGNED'} );
+    const completed = await Jobs.countDocuments( {artisanId: req.user._id, status: 'COMPLETED'} );
     const newRequest = await Requests.countDocuments({artisanId: req.user._id, status: 'NEW'});
     const declinedRequest = await Requests.countDocuments({artisanId: req.user._id, status: 'DECLINED'});
 
     let data = {
       ongoing: jobs,
+      completed,
       newRequest,
       declinedRequest,
 

@@ -81,7 +81,7 @@ router.post( '/token', async ( req, res ) => {
       email,
     } ).select( {
       verificationCode: 0,
-    } );
+    } ).populate('categoryId', 'name imageUrl');
     if ( !user ) return res.status( BAD_REQUEST ).json( invalidCredentials );
 
     // if ( !user.isActive ) return res.status( BAD_REQUEST ).json( accountBlocked );
@@ -155,7 +155,6 @@ router.post( '/token', async ( req, res ) => {
         loginTime: Date.now(),
       },
     } );
-
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
     delete userToken.permissions;

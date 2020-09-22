@@ -36,6 +36,9 @@ const jobsSchema = new Schema( {
   budget: {
     type: Number,
   },
+  phoneNumber: {
+    type: String,
+  },
   createdOn: {
     type: Date,
     default: Date.now

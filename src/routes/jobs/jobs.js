@@ -186,9 +186,10 @@ router.post( '/create', async ( req, res ) => {
       description,
       userId,
       categoryId,
+      phoneNumber
     } = req.body;
 
-    if ( !title || !description || !userId || !categoryId ) {
+    if ( !title || !description || !userId || !categoryId || !phoneNumber ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
@@ -207,6 +208,7 @@ router.post( '/create', async ( req, res ) => {
       description,
       userId,
       categoryId,
+      phoneNumber
     } );
 
     await job.save();
@@ -306,6 +308,7 @@ router.put( '/update/:jobId', Authenticator, async ( req, res ) => {
       userId,
       artisanId,
       categoryId,
+      phoneNumber,
     } = req.body;
 
     if ( !title || !description || !artisanId || !categoryId )
@@ -319,9 +322,75 @@ router.put( '/update/:jobId', Authenticator, async ( req, res ) => {
         description,
         userId,
         artisanId,
+        phoneNumber,
         categoryId,
         updatedOn: Date.now(),
         updatedBy: userId,
+      },
+    }, {
+      new: true,
+    } ).populate( 'artisanId', 'firstname lastname email phone' );
+
+    if ( !job ) {
+      return res.status( BAD_REQUEST ).send( failedRequest );
+    }
+
+    singleResponse.result = job;
+    return res.status( OK ).send( singleResponse );
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+} );
+
+/**
+ * @swagger
+ * /api/jobs/complete/{jobId}:
+ *   put:
+ *     tags:
+ *       - Jobs
+ *     name: Update
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             title:
+ *               type: string
+ *             description:
+ *               type: string
+ *             artisanId:
+ *               type: string
+ *             userId:
+ *               type: string
+ *             jobId:
+ *               type: string
+ *             categoryId:
+ *               type: string
+ *             status:
+ *               type: string
+ *         required:
+ *           - jobId
+ */
+
+router.put( '/complete/:jobId', Authenticator, async ( req, res ) => {
+  try {
+    const {
+      jobId
+    } = req.params;
+
+    const job = await Jobs.findOneAndUpdate( {
+      _id: jobId,
+    }, {
+      $set: {
+        status: 'COMPLETED',
+        updatedOn: Date.now(),
+        updatedBy: req.user._id,
       },
     }, {
       new: true,
