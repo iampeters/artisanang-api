@@ -162,14 +162,14 @@ router.post( '/token', async ( req, res ) => {
     delete userToken.user.password;
 
     // send email to user
-    await Mailer(
-      'You just logged in',
-      user.email,
-      '🛡Login Notification',
-      ( err ) => {
-        logger.error( err.message, err );
-      }
-    );
+    // await Mailer(
+    //   'You just logged in',
+    //   user.email,
+    //   '🛡Login Notification',
+    //   ( err ) => {
+    //     logger.error( err.message, err );
+    //   }
+    // );
 
     return res.status( OK ).json( userToken );
   } catch ( err ) {

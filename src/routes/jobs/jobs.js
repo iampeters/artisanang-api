@@ -196,13 +196,6 @@ router.post( '/create', async ( req, res ) => {
     title.trim();
     description.trim();
 
-    let job = await Jobs.findOne( {
-      title,
-    } );
-    if ( job ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
-    }
-
     job = new Jobs( {
       title,
       description,
