@@ -170,7 +170,7 @@ router.get( '/:requestId', Authenticator, async ( req, res ) => {
   try {
     const job = await Requests.findOne( {
         _id: requestId,
-        } ).populate( 'jobId', 'title description' )
+        } ).populate( 'jobId', 'title phoneNumber description' )
           .populate( 'userId', 'firstname lastname imageUrl' ).populate( 'categoryId', 'name imageUrl' );
     if ( job ) {
       singleResponse.result = job;
