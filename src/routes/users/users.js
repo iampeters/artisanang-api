@@ -214,7 +214,7 @@ router.get( '/:userId', Authenticator, async ( req, res ) => {
       isAdmin: 0,
       MFA: 0,
       isLocked: 0,
-    } );
+    } ).populate('categoryId', 'name');
     if ( user ) {
       singleResponse.result = user;
       return res.status( OK ).send( singleResponse );
