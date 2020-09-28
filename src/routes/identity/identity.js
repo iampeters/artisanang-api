@@ -314,14 +314,14 @@ router.post( '/artisan/token', async ( req, res ) => {
     };
 
     // send email to user
-    await Mailer(
-      'You just logged in',
-      user.email,
-      '🛡Login Notification',
-      ( err ) => {
-        logger.error( err.message, err );
-      }
-    );
+    // await Mailer(
+    //   'You just logged in',
+    //   user.email,
+    //   '🛡Login Notification',
+    //   ( err ) => {
+    //     logger.error( err.message, err );
+    //   }
+    // );
 
     return res.status( OK ).json( userToken );
   } catch ( err ) {
@@ -547,16 +547,16 @@ router.post( '/admin/token', async ( req, res ) => {
       id: user._id,
     };
 
-    ( userToken.permissions = user.permissions ),
+     userToken.permissions = user.permissions;
     // send email to user
-    await Mailer(
-      'You just logged in',
-      user.email,
-      '🛡Login Notification',
-      ( err ) => {
-        logger.error( err.message, err );
-      }
-    );
+    // await Mailer(
+    //   'You just logged in',
+    //   user.email,
+    //   '🛡Login Notification',
+    //   ( err ) => {
+    //     logger.error( err.message, err );
+    //   }
+    // );
 
     return res.status( OK ).json( userToken );
   } catch ( err ) {
