@@ -37,7 +37,6 @@ const userSchema = new Schema( {
     type: String,
     maxlength: 11,
     minlength: 11,
-    unique: true,
   },
   imageUrl: {
     type: String,
