@@ -18,7 +18,7 @@ class Uploader {
     this.upload = multer({
       storage: storageOptions,
       limits: {
-        fileSize: 1000000
+        fileSize: 5000000
       },
       fileFilter: (req, file, cb) => {
         checkFileType(file, cb);

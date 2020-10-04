@@ -9,11 +9,27 @@ const jobsSchema = new Schema( {
 
   title: {
     type: String,
-    required: true,
+    required:  [true, "Title is required"],
   },
   description: {
     type: String,
-    required: true,
+    required: [true, "Description is required"],
+  },
+  address: {
+    type: String,
+    required: [true, "Address is required"],
+  },
+  state: {
+    type: String,
+    required: [true, "Address is required"],
+  },
+  country: {
+    type: String,
+    default: 'Nigeria',
+  },
+  lga: {
+    type: String,
+    default: 'Nigeria',
   },
   status: {
     type: String,

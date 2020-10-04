@@ -281,7 +281,7 @@ router.post( '/onboardArtisan', Authenticator, async ( req, res ) => {
       createdBy
     } = req.body;
 
-    if ( !firstname || !lastname || !email || !phoneNumber || !categoryId || !state || !country ||!address ) {
+    if ( !firstname || !lastname || !phoneNumber || !categoryId || !state || !country ||!address ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
@@ -290,11 +290,13 @@ router.post( '/onboardArtisan', Authenticator, async ( req, res ) => {
     phoneNumber.trim();
     req.body.email.toLowerCase();
 
-    let user = await Users.findOne( {
-      email,
-    } );
-    if ( user ) {
-      return res.status( BAD_REQUEST ).json( duplicateEntry );
+    if (email) {
+      let user = await Users.findOne( {
+        email,
+      } );
+      if ( user ) {
+        return res.status( BAD_REQUEST ).json( duplicateEntry );
+      }
     }
 
     const phone = await Users.findOne( {
@@ -311,7 +313,7 @@ router.post( '/onboardArtisan', Authenticator, async ( req, res ) => {
     const code = await codeGenerator();
     if ( !code ) return res.status( BAD_REQUEST ).json( badRequest );
 
-    user = new Users( {
+    let user = new Users( {
       firstname: firstname,
       lastname: lastname,
       address: address,
@@ -353,7 +355,8 @@ router.post( '/onboardArtisan', Authenticator, async ( req, res ) => {
       userType: user.userType,
     };
 
-    // TODO - send onboard email to artisan
+   if (email) {
+      // TODO - send onboard email to artisan
     Mailer(
       ` 
       <h3>Hello ${user.firstname},</h3>
@@ -370,6 +373,7 @@ router.post( '/onboardArtisan', Authenticator, async ( req, res ) => {
       }
     );
 
+   }
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );
@@ -426,7 +430,7 @@ router.post( '/create', async ( req, res ) => {
       createdBy
     } = req.body;
 
-    if ( !firstname || !lastname || !email || !phoneNumber || !password || !userType) {
+    if ( !firstname || !lastname || !phoneNumber || !password || !userType) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
@@ -435,12 +439,14 @@ router.post( '/create', async ( req, res ) => {
     phoneNumber.trim();
     req.body.email.toLowerCase();
 
+   if (email) {
     let user = await Users.findOne( {
       email,
     } );
     if ( user ) {
       return res.status( BAD_REQUEST ).json( duplicateEntry );
     }
+   }
 
     const phone = await Users.findOne( {
       phoneNumber,
@@ -455,7 +461,7 @@ router.post( '/create', async ( req, res ) => {
     const code = await codeGenerator();
     if ( !code ) return res.status( BAD_REQUEST ).json( badRequest );
 
-    user = new Users( {
+    let user = new Users( {
       firstname: firstname,
       lastname: lastname,
       phoneNumber: phoneNumber,
@@ -480,21 +486,23 @@ router.post( '/create', async ( req, res ) => {
     };
 
     // TODO - send onboard email to artisan
-    Mailer(
-      ` 
-      <h3>Hello ${user.firstname},</h3>
-      <h5>You’re almost there. Confirm your account below to finish creating your ArtisanaNG account.</h5>
-      <p>Click this link to verify your email https://app.artisana.ng/onboarding/confirmation/${user.email}/${token.token}/${code}</p>
-      
-      <h4>Email: ${user.email}</h4>
-      <h4>Password: ${password}</h4>
-      `,
-      user.email,
-      'Your Registration at ArtisanaNG 🎉',
-      ( err ) => {
-        logger.error( err.message, err );
-      }
-    );
+    if (email) {
+      Mailer(
+        ` 
+        <h3>Hello ${user.firstname},</h3>
+        <h5>You’re almost there. Confirm your account below to finish creating your ArtisanaNG account.</h5>
+        <p>Click this link to verify your email https://app.artisana.ng/onboarding/confirmation/${user.email}/${token.token}/${code}</p>
+        
+        <h4>Email: ${user.email}</h4>
+        <h4>Password: ${password}</h4>
+        `,
+        user.email,
+        'Your Registration at ArtisanaNG 🎉',
+        ( err ) => {
+          logger.error( err.message, err );
+        }
+      );
+    }
 
     return res.status( OK ).send( singleResponse );
   } catch ( err ) {

@@ -186,10 +186,12 @@ router.post( '/create', async ( req, res ) => {
       description,
       userId,
       categoryId,
-      phoneNumber
+      phoneNumber,
+      address,
+      state,
     } = req.body;
 
-    if ( !title || !description || !userId || !categoryId || !phoneNumber ) {
+    if ( !title || !description || !userId || !categoryId || !phoneNumber || !state ) {
       return res.status( BAD_REQUEST ).json( paramMissingError );
     }
 
@@ -201,7 +203,9 @@ router.post( '/create', async ( req, res ) => {
       description,
       userId,
       categoryId,
-      phoneNumber
+      phoneNumber,
+      address,
+      state
     } );
 
     await job.save();

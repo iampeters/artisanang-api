@@ -9,18 +9,16 @@ const model = mongoose.model;
 const userSchema = new Schema( {
   email: {
     type: String,
-    required: true,
-    unique: true,
   },
   firstname: {
     type: String,
     maxlength: 20,
-    required: true,
+    required: [true, 'Firstname is required'],
   },
   lastname: {
     type: String,
     maxlength: 20,
-    required: true,
+    required:  [true, 'lastname is required'],
   },
   name: {
     type: String,
@@ -64,7 +62,7 @@ const userSchema = new Schema( {
   },
   password: {
     type: String,
-    required: true,
+    required:  [true, 'password is required'],
   },
   userType: {
     type: Number,
