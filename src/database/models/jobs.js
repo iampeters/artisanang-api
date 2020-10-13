@@ -52,6 +52,12 @@ const jobsSchema = new Schema( {
   budget: {
     type: Number,
   },
+  duration: {
+    type: Date
+  },
+  requestId: {
+    type: String,
+  },
   phoneNumber: {
     type: String,
   },

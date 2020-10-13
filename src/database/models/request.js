@@ -26,8 +26,11 @@ const requestSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['NEW', 'ACCEPTED', 'DECLINED', 'CANCELED'],
+    enum: ['NEW', 'ACCEPTED', 'DECLINED', 'CANCELED', 'TIMEOUT'],
     default: 'NEW'
+  },
+  duration: {
+    type: Date
   },
   createdOn: {
     type: Date,

@@ -132,15 +132,12 @@ const userSchema = new Schema( {
   },
   businessName: {
     type: String,
-    unique: true,
   },
   NIN: {
     type: String,
-    unique: true,
   },
   RCNumber: {
     type: String,
-    unique: true,
   },
   experience: {
     type: Number,
