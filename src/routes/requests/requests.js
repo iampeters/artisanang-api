@@ -215,19 +215,21 @@ router.get( '/:requestId', Authenticator, async ( req, res ) => {
  */
 
 router.post( '/create', Authenticator, async ( req, res ) => {
-  // add one hour to the current date time
-  let duration = new Date();
-  duration.setHours( duration.getHours() + 1 );
 
   try {
     const {
       jobId,
       artisanId,
-      userId
+      userId,
+      timeout
     } = req.body;
 
-    if ( !jobId || !userId || !artisanId )
+    if ( !jobId || !userId || !artisanId || !timeout )
       return res.status( BAD_REQUEST ).json( paramMissingError );
+
+    // add one hour to the current date time
+    let duration = new Date();
+    duration.setHours( duration.getHours() + timeout );
 
     const request = new Requests( {
       jobId,
@@ -478,67 +480,85 @@ router.put( '/cancel/:requestId', Authenticator, async ( req, res ) => {
 
 /**
  * @swagger
- * /api/requests/timeout/{requestId}:
+ * /api/requests/timeout/{jobId}:
  *  put:
  *   summary: Timeout job request
  *   tags:
  *     - Requests
  *   parameters:
  *    - in: path
- *      name: requestId
+ *      name: jobId
  *      schema:
  *       type: string
  *      required: true
  */
 
-router.put( '/timeout/:requestId', Authenticator, async ( req, res ) => {
+router.put( '/timeout/:jobId', Authenticator, async ( req, res ) => {
   try {
     const {
-      requestId
+      jobId
     } = req.params;
 
-    if ( !requestId ) return res.status( BAD_REQUEST ).json( paramMissingError );
+    if ( !jobId ) return res.status( BAD_REQUEST ).json( paramMissingError );
 
-    const jobRequest = await Requests.findOneAndUpdate( {
-        _id: requestId,
-      }, {
-        $set: {
-          status: 'TIMEOUT',
-          updatedOn: Date.now(),
-          updatedBy: req.user._id,
-        },
-      }, {
-        new: true,
-      } )
-      .populate( 'artisanId', 'email' )
-      .populate( 'userId', 'firstname lastname email' )
-      .populate( 'jobId', 'title description' );
-
-
-    const job = await Jobs.findOneAndUpdate( {
-      _id: jobRequest.jobId._id
-    }, {
-      $set: {
-        status: 'NEW',
-        artisanId: null
-      }
+    const jobReq = await Jobs.findOne( {
+      _id: jobId
     } );
 
-    if ( !job ) return res.status( OK ).send( failedRequest );
+    if ( jobReq && jobReq.status === "PENDING" ) {
+      let now = new Date();
+      let requestDate = new Date( jobReq.duration );
+      let requestId = jobReq.requestId;
 
-    // TODO - send email to artisan
-    Mailer(
-      'Your job request has timed out',
-      jobRequest.userId.email,
-      'Job Request timeout 🎉',
-      ( err ) => {
-        logger.error( err.message, err );
+      if ( now > requestDate ) {
+
+        const jobRequest = await Requests.findOneAndUpdate( {
+            _id: requestId,
+          }, {
+            $set: {
+              status: 'TIMEOUT',
+              updatedOn: Date.now(),
+              updatedBy: req.user._id,
+            },
+          }, {
+            new: true,
+          } )
+          .populate( 'artisanId', 'email' )
+          .populate( 'userId', 'firstname lastname email' )
+          .populate( 'jobId', 'title description' );
+
+
+        const job = await Jobs.findOneAndUpdate( {
+          _id: jobId
+        }, {
+          $set: {
+            status: 'NEW',
+            artisanId: null
+          }
+        } );
+
+        if ( !job ) return res.status( OK ).send( failedRequest );
+
+        // TODO - send email to artisan
+        Mailer(
+          'Your job request has timed out',
+          jobRequest.userId.email,
+          'Job Request timeout 🎉',
+          ( err ) => {
+            logger.error( err.message, err );
+          }
+        );
+
+        singleResponse.result = jobRequest;
+
+        return res.status( OK ).send( singleResponse );
+      } else {
+        return res.status( OK ).send( {} );
       }
-    );
+    } else {
+      return res.status( OK ).send( {} );
+    }
 
-    singleResponse.result = jobRequest;
-
-    return res.status( OK ).send( singleResponse );
   } catch ( err ) {
     logger.error( err.message, err );
     return res.status( BAD_REQUEST ).json( {
