@@ -77,11 +77,11 @@ router.post( '/token', async ( req, res ) => {
     password
   } = req.body;
   try {
-    const user = await Users.findOne( {
+    let user = await Users.findOne( {
       email,
     } ).select( {
       verificationCode: 0,
-    } ).populate('categoryId', 'name imageUrl');
+    } ).populate( 'categoryId', 'name imageUrl' );
     if ( !user ) return res.status( BAD_REQUEST ).json( invalidCredentials );
 
     // if ( !user.isActive ) return res.status( BAD_REQUEST ).json( accountBlocked );
@@ -147,19 +147,28 @@ router.post( '/token', async ( req, res ) => {
     const token = await user.generateAuthToken();
     if ( !token ) return res.status( BAD_REQUEST ).json( invalidCredentials );
 
-    await Users.findOneAndUpdate( {
+    const authUser = await Users.findOneAndUpdate( {
       email,
     }, {
       $set: {
         lastLogin: user.loginTime,
         loginTime: Date.now(),
       },
+    } ).select( {
+      password: 0,
+      isAdmin: 0,
+      verificationCode: 0,
+      isLocked: 0,
+
     } );
     userToken.token = token.token;
     userToken.refresh_token = token.refresh_token;
     delete userToken.permissions;
-    userToken.user = user;
-    delete userToken.user.password;
+
+    // delete authUser.password;
+    userToken.user = authUser;
+
+    // delete userToken.user.password;
 
     // send email to user
     // await Mailer(
@@ -547,7 +556,7 @@ router.post( '/admin/token', async ( req, res ) => {
       id: user._id,
     };
 
-     userToken.permissions = user.permissions;
+    userToken.permissions = user.permissions;
     // send email to user
     // await Mailer(
     //   'You just logged in',
