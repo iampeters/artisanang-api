@@ -9,7 +9,6 @@ const logger = require( '../../shared/Logger' );
 const {
   paramMissingError,
   singleResponse,
-  duplicateEntry,
   paginatedResponse,
   noResult,
   failedRequest,
@@ -445,6 +444,61 @@ router.delete( '/delete/:jobId', Authenticator, async ( req, res ) => {
     } );
   }
 } );
+
+
+/**
+ * @swagger
+ * /api/jobs/metrics/dashboard:
+ *  get:
+ *   tags:
+ *     - Jobs
+ *   parameters:
+ *    - in: path
+ *      name: jobId
+ *      schema:
+ *       type: number
+ *      required: true
+ */
+
+router.get('/metrics/dashboard', async (req, res) => {
+  try {
+    
+    let date = '2020-09-07';
+    const job = await Jobs.aggregate([
+      {
+        "$match":{
+          "createdOn": { $gt: new Date(date - 24*60*60 * 1000) }
+        }
+      }, {
+        "$project": {
+          "h": {"$hour" : "$createdOn"},
+          "original_doc": "$$ROOT"
+        }
+      }, {
+        "$group": {
+          "_id": { "hour": "$h" },
+          "docs": { $push: "$original_doc" } 
+        }
+      }, { 
+        $replaceRoot: {
+          newRoot: { $arrayElemAt: ["$docs", 0] }
+        }
+      }
+    ]);
+
+    if ( job ) {
+      singleResponse.result = job;
+      return res.status( OK ).send( singleResponse );
+    } else {
+      return res.status( BAD_REQUEST ).send( singleResponse );
+    }
+  } catch ( err ) {
+    logger.error( err.message, err );
+    return res.status( BAD_REQUEST ).json( {
+      error: err.message,
+    } );
+  }
+});
 
 /******************************************************************************
  *                                     Export

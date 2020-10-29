@@ -214,8 +214,9 @@ router.get( '/:userId', Authenticator, async ( req, res ) => {
       isAdmin: 0,
       MFA: 0,
       isLocked: 0,
-    } ).populate('categoryId', 'name');
+    } ).populate( 'categoryId', 'name' );
     if ( user ) {
+      // delete user.password;
       singleResponse.result = user;
       return res.status( OK ).send( singleResponse );
     } else {
@@ -662,6 +663,61 @@ router.put(
     }
   }
 );
+
+
+/**
+ * @swagger
+ * /api/users/chatToggle:
+ *  put:
+ *   tags:
+ *     - Users
+ *   parameters:
+ *       - name: body
+ *         in: body
+ *         schema:
+ *           type: object
+ *           properties:
+ *             userId:
+ *               type: number
+ *             status:
+ *               type: boolean
+ */
+
+router.put(
+  '/chatToggle',
+  [ Authenticator ],
+  async ( req, res ) => {
+    try {
+      const {
+        userId,
+        status
+      } = req.body;
+
+      const user = await Users.findOneAndUpdate( {
+        _id: userId,
+      }, {
+        $set: {
+          allowChat: status,
+        },
+      }, {
+        new: true,
+      } );
+
+      if ( user ) {
+        singleResponse.result = user;
+        return res.status( OK ).send( singleResponse );
+      } else {
+        return res.status( BAD_REQUEST ).send( singleResponse );
+      }
+    } catch ( err ) {
+      logger.error( err.message, err );
+      return res.status( BAD_REQUEST ).json( {
+        error: err.message,
+      } );
+    }
+  }
+);
+
 
 /**
  * @swagger
