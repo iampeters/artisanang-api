@@ -2,22 +2,22 @@ const mongoose = require( 'mongoose' );
 const Schema = mongoose.Schema;
 const model = mongoose.model;
 
-const Users = require('./users');
+const Users = require( './users' );
 
-const chatSchema = new Schema({ 
-  sender:{
+const chatSchema = new Schema( {
+  sender: {
     type: Schema.Types.ObjectId,
-    required: [true, 'Sender is required'],
+    required: [ true, 'Sender is required' ],
     ref: Users
   },
-  receiver:{
+  receiver: {
     type: Schema.Types.ObjectId,
-    required: [true, 'Receiver is required'],
+    required: [ true, 'Receiver is required' ],
     ref: Users
   },
   message: {
     type: String,
-    required: [true, 'Message is required'],
+    required: [ true, 'Message is required' ],
   },
   createdOn: {
     type: Date,
@@ -27,8 +27,36 @@ const chatSchema = new Schema({
     type: Boolean,
     default: false
   }
-});
+} );
 
+const activeChatSchema = new Schema( {
+  sender: {
+    type: Schema.Types.ObjectId,
+    required: [ true, 'Sender is required' ],
+    ref: Users
+  },
+  userId: {
+    type: Schema.Types.ObjectId,
+    required: [ true, 'Receiver is required' ],
+    ref: Users
+  },
+  message: {
+    type: String,
+    required: [ true, 'Message is required' ],
+  },
+  createdOn: {
+    type: Date,
+    default: Date.now
+  },
+  isRead: {
+    type: Boolean,
+    default: false
+  }
+} );
 
-const Chats = model('Chats', chatSchema, 'chats');
-module.exports = Chats;
+const ActiveChats = model( 'ActiveChats', activeChatSchema, 'activeChats' )
+const Chats = model( 'Chats', chatSchema, 'chats' );
+module.exports = {
+  Chats,
+  ActiveChats
+};

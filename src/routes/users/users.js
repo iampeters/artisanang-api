@@ -23,6 +23,7 @@ const Users = require( '../../database/models/users' );
 const Authenticator = require( '../../middlewares/auth' );
 const Mailer = require( '../../engine/mailer' );
 const isAdmin = require( '../../middlewares/isAdmin' );
+const codeGenerator = require( '../../utils/codeGenerator' );
 
 //  start
 const router = express.Router();
@@ -332,7 +333,7 @@ router.post( '/create', async ( req, res ) => {
     const hash = await encrypt( password );
     req.body.password = hash;
 
-    const code = await user.generateCode();
+    const code = await codeGenerator();
 
     user = new Users( {
       firstname,

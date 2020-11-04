@@ -20,7 +20,10 @@ const {
 const encrypt = require( '../../security/encrypt' );
 
 const Users = require( '../../database/models/users' );
-const Chats = require( '../../database/models/chats' );
+const {
+  Chats,
+  ActiveChats
+} = require( '../../database/models/chats' );
 const Authenticator = require( '../../middlewares/auth' );
 const Mailer = require( '../../engine/mailer' );
 const isAdmin = require( '../../middlewares/isAdmin' );
@@ -68,7 +71,7 @@ router.get( '/getActiveChats', Authenticator, async ( req, res ) => {
 
   let query = {
     $or: [ {
-      receiver: req.user._id
+      userId: req.user._id
     }, {
       sender: req.user._id
     } ]
@@ -79,7 +82,7 @@ router.get( '/getActiveChats', Authenticator, async ( req, res ) => {
 
 
   try {
-    const chats = await Chats.find( whereCondition )
+    const chats = await ActiveChats.find( whereCondition )
       .skip( ( pagination.page - 1 ) * pagination.pageSize )
       .limit( pagination.pageSize )
       .select( {
@@ -88,8 +91,8 @@ router.get( '/getActiveChats', Authenticator, async ( req, res ) => {
       } )
       .sort( {
         _id: -1,
-      } ).populate( 'sender', 'name imageUrl' ).populate( 'receiver', 'name imageUrl' );
-    const total = await Chats.countDocuments( whereCondition );
+      } ).populate( 'sender', 'name imageUrl' ).populate( 'userId', 'name imageUrl' );
+    const total = await ActiveChats.countDocuments( whereCondition );
 
     // Paginated Response
     paginatedResponse.items = chats;
@@ -154,7 +157,7 @@ router.get( '/getChats/:userId', Authenticator, async ( req, res ) => {
       receiver: req.params.userId,
       sender: req.user._id
 
-    },  ]
+    }, ]
   };
 
   // set sender and receiver
@@ -170,8 +173,8 @@ router.get( '/getChats/:userId', Authenticator, async ( req, res ) => {
         password: 0,
       } )
       .sort( {
-        _id: -1,
-      } );
+        _id: 1,
+      } ).populate('sender', ' name imageUrl').populate('receiver', ' name imageUrl');
     const total = await Chats.countDocuments( whereCondition );
 
     // Paginated Response
@@ -222,7 +225,7 @@ router.post(
       message.trim();
       receiver.trim();
 
-      chat = new Jobs( {
+      chat = new Chats( {
         sender: req.user._id,
         receiver,
         message,
@@ -230,11 +233,48 @@ router.post(
 
       await chat.save();
 
-      singleResponse.result = chat;
+      let query = {
+        $or: [ {
+            sender: req.user._id,
+            userId: receiver
+          },
+          {
+            sender: receiver,
+            userId: req.user._id
+          }
+        ]
+      }
 
       if ( chat ) {
-        singleResponse.result = chat;
-        return res.status( OK ).send( singleResponse );
+        let activeChats = await ActiveChats.findOne( query );
+        if ( activeChats ) {
+          console.log( 'step 1' );
+
+          await ActiveChats.updateOne( query, {
+            $set: {
+              message: message,
+              createdOn: Date.now(),
+              isRead: false
+            },
+          } )
+
+          singleResponse.result = chat;
+          return res.status( OK ).send( singleResponse );
+        } else {
+          activeChats = new ActiveChats( {
+            sender: req.user._id,
+            userId: receiver,
+            message
+          } )
+
+          console.log( 'step 2' );
+
+          await activeChats.save();
+
+          singleResponse.result = chat;
+          return res.status( OK ).send( singleResponse );
+        }
+
       } else {
         return res.status( BAD_REQUEST ).send( singleResponse );
       }
