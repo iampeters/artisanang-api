@@ -1,5 +1,7 @@
 require( 'module-alias/register' );
 const express = require( 'express' );
+const Notifications = require( '../../database/models/notification' );
+
 const {
   BAD_REQUEST,
   OK
@@ -174,7 +176,7 @@ router.get( '/getChats/:userId', Authenticator, async ( req, res ) => {
       } )
       .sort( {
         _id: 1,
-      } ).populate('sender', ' name imageUrl').populate('receiver', ' name imageUrl');
+      } ).populate( 'sender', ' name imageUrl' ).populate( 'receiver', ' name imageUrl' );
     const total = await Chats.countDocuments( whereCondition );
 
     // Paginated Response
@@ -246,9 +248,39 @@ router.post(
       }
 
       if ( chat ) {
+
+        let notify = await Notifications.findOne( {
+          userId: receiver
+        } );
+
+        if ( notify ) {
+          let notifier = await Notifications.updateOne( {
+            userId: receiver
+          }, {
+            $set: {
+              count: notify.count + 1,
+              updatedOn: Date.now(),
+              isRead: false
+            },
+          }, {
+            new: true,
+          } )
+
+          if (!notifier)  return res.status( badRequest ).send( failedRequest );
+        } else {
+          let notify = new Notifications( {
+            userId: receiver,
+            count: 1
+          } )
+
+          await notify.save();
+
+          if (!notify)  return res.status( badRequest ).send( failedRequest );
+
+        }
+
         let activeChats = await ActiveChats.findOne( query );
         if ( activeChats ) {
-          console.log( 'step 1' );
 
           await ActiveChats.updateOne( query, {
             $set: {
@@ -256,6 +288,8 @@ router.post(
               createdOn: Date.now(),
               isRead: false
             },
+          }, {
+            new: true,
           } )
 
           singleResponse.result = chat;
@@ -266,8 +300,6 @@ router.post(
             userId: receiver,
             message
           } )
-
-          console.log( 'step 2' );
 
           await activeChats.save();
 
