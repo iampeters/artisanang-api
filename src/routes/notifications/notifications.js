@@ -52,9 +52,6 @@ module.exports = ( server ) => {
         let notify = await Notifications.findOne( {
           userId
         } ).populate( 'userId', 'name imageUrl' );
-
-        console.log(notify);
-
         singleResponse.result = notify;
         io.sockets.emit( 'Notifications', singleResponse );
         return;
