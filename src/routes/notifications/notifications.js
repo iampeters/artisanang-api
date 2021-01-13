@@ -18,14 +18,14 @@ module.exports = ( server ) => {
   const io = SocketIO( server );
 
   io.on( 'connection', ( socket ) => {
-    io.sockets.emit( 'Socket Connected', 'hi' );
+    io.sockets.emit('Socket Connected', 'hi');
 
     /**
      * @swagger
-     * /api/notifications/getNotifications:
+     * /api/NotificationsSocket/getNotifications:
      *  post:
      *   tags:
-     *     - Notifications
+     *     - NotificationsSocket
      *   parameters:
      *       - name: body
      *         in: body
@@ -37,39 +37,36 @@ module.exports = ( server ) => {
      */
 
     // get user notifications
-    socket.on( 'getNotifications', async ( event ) => {
-      const {
-        userId
-      } = event;
+    socket.on('getNotifications', async (event) => {
+      const { userId } = event;
 
-      if ( !userId ) {
+      if (!userId) {
         failedRequest.message = 'UserId is required';
-        io.sockets.emit( 'Error', failedRequest );
+        io.sockets.emit('Error', failedRequest);
         return;
       }
 
       try {
-        let notify = await Notifications.findOne( {
-          userId
-        } ).populate( 'userId', 'name imageUrl' );
+        let notify = await Notifications.findOne({
+          userId,
+        }).populate('userId', 'name imageUrl');
         singleResponse.result = notify;
-        io.sockets.emit( 'Notifications', singleResponse );
+        io.sockets.emit('Notifications', singleResponse);
         return;
-      } catch ( err ) {
-        logger.error( err.message, err );
+      } catch (err) {
+        logger.error(err.message, err);
         failedRequest.message = err.message;
-        io.sockets.emit( 'Error', failedRequest );
+        io.sockets.emit('Error', failedRequest);
         return;
       }
-
-    } );
+    });
 
     /**
      * @swagger
      * /api/notifications/markAsRead:
      *  post:
      *   tags:
-     *     - Notifications
+     *     - NotificationsSocket
      *   parameters:
      *       - name: body
      *         in: body
@@ -81,51 +78,51 @@ module.exports = ( server ) => {
      */
 
     // mark as read
-    socket.on( 'markAsRead', async ( event ) => {
-      const {
-        userId
-      } = event;
+    socket.on('markAsRead', async (event) => {
+      const { userId } = event;
 
-      if ( !userId ) {
+      if (!userId) {
         failedRequest.message = 'UserId is required';
-        io.sockets.emit( 'Error', failedRequest );
+        io.sockets.emit('Error', failedRequest);
         return;
       }
 
       try {
-        let notify = await Notifications.findOne( {
-          userId
-        } ).populate( 'userId', 'name imageUrl' );
+        let notify = await Notifications.findOne({
+          userId,
+        }).populate('userId', 'name imageUrl');
 
-        if ( notify ) {
-          await Notifications.updateOne( {
-            userId
-          }, {
-            $set: {
-              count: 0,
-              updatedOn: Date.now(),
-              isRead: true
+        if (notify) {
+          await Notifications.updateOne(
+            {
+              userId,
             },
-          } )
+            {
+              $set: {
+                count: 0,
+                updatedOn: Date.now(),
+                isRead: true,
+              },
+            }
+          );
           singleResponse.result = notify;
-          io.sockets.emit( 'Notifications', singleResponse )
+          io.sockets.emit('Notifications', singleResponse);
           return;
         } else {
           failedRequest.message = 'Request failed';
-          io.sockets.emit( 'Error', failedRequest );
+          io.sockets.emit('Error', failedRequest);
           return;
         }
-      } catch ( err ) {
-        logger.error( err.message, err );
+      } catch (err) {
+        logger.error(err.message, err);
         failedRequest.message = err.message;
-        io.sockets.emit( 'Error', failedRequest );
+        io.sockets.emit('Error', failedRequest);
         return;
       }
+    });
 
-    } );
-
-    socket.on( 'disconnect', () => {
-      logger.info( 'Socket Disconnected' );
-    } );
+    socket.on('disconnect', () => {
+      logger.info('Socket Disconnected');
+    });
   } );
 };

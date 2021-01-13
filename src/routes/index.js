@@ -14,6 +14,7 @@ const portfolioRoute = require('./portfolio/portfolio');
 const requestRoute = require('./requests/requests');
 const categoryRoute = require('./category/category');
 const chatRoute = require('./chats/chats');
+const notifyRoute = require('./notifications/notify');
 
 router.use('/users', UserRoute);
 router.use('/artisans', ArtisansRoute);
@@ -29,6 +30,7 @@ router.use('/portfolios', portfolioRoute);
 router.use('/requests', requestRoute);
 router.use('/category', categoryRoute);
 router.use('/chats', chatRoute);
+router.use('/notifications', notifyRoute);
 
 
 module.exports = router;

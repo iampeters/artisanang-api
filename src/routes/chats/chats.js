@@ -99,6 +99,7 @@ router.get( '/getActiveChats', Authenticator, async ( req, res ) => {
     // Paginated Response
     paginatedResponse.items = chats;
     paginatedResponse.total = total;
+    paginatedResponse.items.reverse();
 
     return res.status( OK ).send( paginatedResponse );
   } catch ( err ) {

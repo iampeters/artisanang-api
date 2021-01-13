@@ -12,7 +12,8 @@
       },
       "explorer": true,
       "host": [
-        "https://api.artisana.ng"
+        "https://api.artisana.ng",
+        "http://localhost:5000"
       ]
     },
     "schemes": [
@@ -22,6 +23,9 @@
       {
         "url": "https://api.artisana.ng",
         "description": "Production Environment"
+      }, {
+        "url": "http://localhost:5000",
+        "description": "Local"
       }
     ],
     "components": {
