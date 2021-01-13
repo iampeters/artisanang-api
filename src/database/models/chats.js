@@ -26,6 +26,10 @@ const chatSchema = new Schema( {
   isRead: {
     type: Boolean,
     default: false
+  },
+  sent: {
+    type: Boolean,
+    default: true
   }
 } );
 
