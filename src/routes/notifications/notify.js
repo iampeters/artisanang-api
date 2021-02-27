@@ -15,7 +15,7 @@ const {
 } = require('../../shared/constants');
 
 const Authenticator = require('../../middlewares/auth');
-const { OK } = require( 'http-status-codes' );
+const { OK, BAD_REQUEST } = require('http-status-codes');
 
 const router = express.Router();
 
@@ -53,8 +53,13 @@ router.get('/getNotifications/:userId', Authenticator, async (req, res) => {
     // };
     // return res.status(OK).send(singleResponse);
 
-    singleResponse.result = notify;
-    return res.status(OK).send(singleResponse);
+    if (notify) {
+      singleResponse.result = notify;
+      return res.status(OK).send(singleResponse);
+    } else {
+      singleResponse.result = {count: 0};
+      return res.status(OK).send(singleResponse);
+    }
   } catch (err) {
     logger.error(err.message, err);
     return res.status(BAD_REQUEST).json({
@@ -114,9 +119,8 @@ router.post('/markAsRead/', Authenticator, async (req, res) => {
       singleResponse.result = notify;
       return res.status(OK).send(singleResponse);
     } else {
-      failedRequest.message = 'Request failed';
-
-      return res.status(OK).send(failedRequest);
+       singleResponse.result = { count: 0 };
+       return res.status(OK).send(singleResponse);
     }
   } catch (err) {
     logger.error(err.message, err);
