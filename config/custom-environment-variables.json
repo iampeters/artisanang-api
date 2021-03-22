@@ -3,7 +3,7 @@
     "jwtPrivateKey": "jwtPrivateKey",
     "refreshTokenPrivateKey": "refreshTokenPrivateKey",
     "passwordRecoveryPrivateKey": "passwordRecoveryPrivateKey",
-    "db": "connectionString",
+    "db": "mongodb+srv://admin:artisanang2020@artisanang.zpjmj.mongodb.net/test?retryWrites=true",
     "emailUser": "emailUser",
     "emailPassword": "emailPassword",
     "host": "host",

@@ -6,7 +6,7 @@
   "passwordRecoveryPrivateKey": "passwordRecoveryPrivateKey",
   "emailUser": "emailUser",
   "emailPassword": "emailPassword",
-  "db": "connectionString",
+  "db": "mongodb+srv://admin:artisanang2020@artisanang.zpjmj.mongodb.net/test?retryWrites=true",
   "host": "host",
   "mailer": "mailer",
   "level": "error"

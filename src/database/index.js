@@ -12,14 +12,14 @@ const connection = mongoose
     useFindAndModify: false
   })
   .then(() => {
-    if (config.get('environment') === 'production') {
+    if (config.get('environment') !== 'production') {
       logger.error(`Database connected => ${config.get('environment')}`);
     } else {
       debuggerColor(`Database connected => ${config.get('environment')}`);
     }
   })
   .catch((ex) => {
-    if (config.get('environment') === 'production') {
+    if (config.get('environment') !== 'production') {
       logger.error(`Database connection failed! => ${ex}`, ex);
     } else {
       debuggerColor(`Database connection failed! => ${ex}`);
